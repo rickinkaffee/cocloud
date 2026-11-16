@@ -1,8 +1,14 @@
-# Open Workbench
+# cocloud
+
+[中文安装与使用指南](README.zh-CN.md)
 
 Self-hosted coding-agent workbench with a web client, Android WebView client, incremental memory service, shared server browser and project import service.
 
 This source distribution starts from T3 Code v0.1.8 (commit `bf469bb19669671d0df2efda74ed73867a7137c0`) and includes independently maintained extensions. Claude Agent SDK and Cursor SDK integrations are removed from this distribution. Agent executables, commercial model services and provider subscriptions are separate products; no account or subscription is supplied.
+
+## Project origin
+
+cocloud is an integration and extension project based on [T3 Code](https://github.com/pingdotgg/t3code), not a workbench written entirely from scratch. The core web/server framework and its Codex app-server integration come from T3 Code. Codex itself is an upstream agent runtime. The additional Android client, memory integration, shared browser gateway, project import service and mobile interaction changes are maintained in this distribution. Hindsight, FloeBrowser and other dependencies retain their own attribution and licenses. Keeping these distinctions explicit is part of this project's attribution policy.
 
 No user accounts, credentials, conversations, real project files, personal memory, browser profiles, service addresses, signing keys or prior deployment history are included. Every installation creates its own empty data directories. Tests use synthetic data; the small example workbook is generated data.
 
@@ -11,6 +17,8 @@ No user accounts, credentials, conversations, real project files, personal memor
 Use Linux, Node.js 26 and pnpm 12.14.0. Install dependencies from the committed lockfile:
 
 ```sh
+git clone https://github.com/rickinkaffee/cocloud.git
+cd cocloud
 cd core
 pnpm install --frozen-lockfile
 pnpm --dir apps/web exec vp build
@@ -19,6 +27,8 @@ node apps/server/dist/bin.mjs serve --base-dir /var/lib/open-workbench --host 12
 ```
 
 The first server start creates fresh state and prints its own pairing instructions. Treat those instructions as private. Configure your own installed agent runtime in Settings. Keep the server bound to loopback behind an HTTPS reverse proxy. No original installation is needed.
+
+For a first local trial, choose a writable data directory outside the checkout and open `http://127.0.0.1:3773` in your browser. Follow the pairing instructions, configure your agent in Settings, then create a project using a directory on the server and open a conversation. The core workbench can be used before the optional extensions are deployed; their links require the corresponding services and proxy routes below. See the [Chinese guide](README.zh-CN.md) for a complete first-run flow and SSH forwarding example.
 
 On a small server, run builds serially in a separate service or container with CPU and memory limits; reserve memory for the running workbench. `scripts/build-core.sh` disables source maps and limits native build concurrency. Its build flags are for distribution on small machines.
 
