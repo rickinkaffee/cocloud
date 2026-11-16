@@ -9,3 +9,5 @@ const adapter={name:'test-react',setup(b){
 const compiled=await build({entryPoints:['src/hooks/useWorkbenchSidebarSwipe.ts'],bundle:true,write:false,format:'iife',globalName:'WorkbenchGesture',target:'es2022',plugins:[adapter],legalComments:'inline'});
 writeFileSync(out+'/Rb-compiled.js',compiled.outputFiles[0].text+'\nfunction Rb(...args){return WorkbenchGesture.useWorkbenchSidebarSwipe(...args)}');
 const test=spawnSync(process.execPath,['tests/gestures.mjs',out],{stdio:'inherit'});if(test.status!==0)process.exit(test.status||1);
+
+const proxyTest=spawnSync(process.execPath,['tests/proxy-entry.mjs'],{stdio:'inherit'});if(proxyTest.status!==0)process.exit(proxyTest.status||1);

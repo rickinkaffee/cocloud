@@ -95,3 +95,10 @@ node apps/server/dist/bin.mjs serve \
 ## 验证范围
 
 公开源码已完成前后端构建与类型检查、空目录服务启动、Android 源码构建与签名检查、手势、记忆、网关和项目导入相关回归。复现命令见 [Validation](README.md#validation)。Android 真机体验及使用你自己的真实模型账号，需要在自己的部署环境验证。
+
+## 服务器代理开关与连接测速
+
+新增[代理设置扩展](extensions/proxy/README.md)：侧栏左右滑动开关，仅检测
+Google／GitHub 的连接延迟，不做下载测速。使用 `config/proxy.env.example` 配置
+自己的本地代理、systemd 服务及工作台地址。仓库不附订阅、节点、凭据或代理程序。
+前端需重新构建；认证控制服务独立部署。

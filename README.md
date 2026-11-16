@@ -117,3 +117,11 @@ Use only temporary test state. Tests must not point at a live installation's dat
 ## Licenses
 
 See [LICENSE](LICENSE), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [DEPENDENCIES.json](DEPENDENCIES.json). Third-party components retain their own licenses and notices. This repository's license does not relicense dependencies or hosted services. The web build regenerates its third-party notice manifest from installed dependencies and refuses packages with missing notice evidence.
+
+## Server proxy controls
+
+Optional [proxy settings extension](extensions/proxy/README.md): sidebar sliding
+on/off switch with Google/GitHub connection latency checks. Configure your own
+loopback proxy and systemd unit using `config/proxy.env.example`; no subscription,
+credentials or proxy binary is included. Rebuild the web client for the UI and
+deploy the authenticated bridge separately.

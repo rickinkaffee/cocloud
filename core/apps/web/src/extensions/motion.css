@@ -12,3 +12,9 @@ nav[data-workbench-tools]{transform:none!important;translate:none!important;will
 [data-memory-panel]{position:fixed;inset:0;z-index:2147483000;background:var(--background);width:100%;height:100dvh;pointer-events:auto}[data-memory-panel]>iframe{display:block;width:100%;height:100%;border:0;background:var(--background)}
 
 .memory-load-status{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--background);color:var(--foreground);padding:24px;font-size:13px}.memory-load-status[hidden]{display:none}.memory-load-status button{padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--secondary);color:var(--foreground)}
+
+.cocloud-proxy-switch{display:inline-flex;align-items:center;flex-shrink:0;width:36px;height:20px;padding:2px;border:0;border-radius:999px;cursor:pointer;transition:background-color .2s}
+.cocloud-proxy-switch:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.cocloud-proxy-switch:disabled{opacity:.5;cursor:not-allowed}
+.cocloud-proxy-switch-thumb{display:block;width:16px;height:16px;border-radius:999px;background:var(--background);box-shadow:0 1px 2px #0002;pointer-events:none;transition:transform .15s}
+@media(prefers-reduced-motion:reduce){.cocloud-proxy-switch,.cocloud-proxy-switch-thumb{transition:none}}
