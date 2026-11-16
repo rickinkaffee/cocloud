@@ -2,6 +2,12 @@
 
 基于 T3 Code 的自托管编程工作台集成与扩展项目，包含网页工作台、Android 客户端、记忆服务、共享浏览器和项目导入服务。
 
+## 鸣谢 T3 Code
+
+**cocloud 是在 [T3 Code（t3code）](https://github.com/pingdotgg/t3code) 基础上进行二次开发的项目。** 核心工作台及 Codex app-server 接入来自 T3 Code；本项目在此基础上做集成、适配与功能扩展。感谢 T3 Code 作者和贡献者的开源工作。
+
+如果你喜欢 cocloud，也请前往 **[T3 Code 上游仓库](https://github.com/pingdotgg/t3code)**，为原项目点亮一颗 **Star ⭐**，支持它继续发展。
+
 ## 项目介绍
 
 **Codex 的实力，你的工作方式。自由定制 · 云端常驻 · 手机也能交付。**
