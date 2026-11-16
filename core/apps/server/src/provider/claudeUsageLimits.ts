@@ -1,13 +1,13 @@
-interface SDKControlGetUsageResponse {
+interface ClaudeUsageResponse {
   rate_limits_available: boolean;
   rate_limits?: {
-    five_hour?: { utilization?: number; resets_at?: string | null };
-    seven_day?: { utilization?: number; resets_at?: string | null };
-    extra_usage?: { is_enabled?: boolean; used_credits?: number | null; monthly_limit?: number | null; utilization?: number | null };
+    five_hour?: { utilization?: number | null; resets_at?: string | null } | null;
+    seven_day?: { utilization?: number | null; resets_at?: string | null } | null;
+    extra_usage?: { is_enabled?: boolean; used_credits?: number | null; monthly_limit?: number | null; utilization?: number | null; [key: string]: unknown } | null;
     [key: string]: unknown;
   };
 }
-interface SDKRateLimitInfo { rateLimitType?: string; utilization?: number; resetsAt?: number; }
+interface ClaudeRateLimitInfo { rateLimitType?: string; utilization?: number; resetsAt?: number; [key: string]: unknown }
 import type {
   ProviderUsageLimitsUpdate,
   ServerProviderUsageLimits,
@@ -90,7 +90,7 @@ function percentFromAmounts(used: number | null | undefined, limit: number | nul
   return Number.isFinite(percent) ? clampPercent(percent) : undefined;
 }
 
-function readSpendPercent(rateLimits: NonNullable<SDKControlGetUsageResponse["rate_limits"]>) {
+function readSpendPercent(rateLimits: NonNullable<ClaudeUsageResponse["rate_limits"]>) {
   const spend = Option.getOrUndefined(
     decodeSpendBudget((rateLimits as { readonly spend?: unknown }).spend),
   );
@@ -114,8 +114,8 @@ function readSpendPercent(rateLimits: NonNullable<SDKControlGetUsageResponse["ra
 }
 
 /**
- * `model_scoped` shipped in the CLI after the SDK typings we pin, so it is
- * read structurally until the `.d.ts` catches up.
+ * Read optional model windows structurally so this parser stays independent
+ * of provider SDK packages.
  */
 interface ModelScopedWindow {
   readonly display_name: string;
@@ -162,7 +162,7 @@ function makeWindow(
 
 /** Stream utilization is 0-1. Drop unnamed overage buckets until probed to avoid unreconcilable rows. */
 export function claudeRateLimitEventToUpdate(
-  info: SDKRateLimitInfo,
+  info: ClaudeRateLimitInfo,
   names: ClaudeScopedLimitNames,
 ): ProviderUsageLimitsUpdate | undefined {
   const type: string | undefined = info.rateLimitType;
@@ -182,7 +182,7 @@ export function claudeRateLimitEventToUpdate(
 
 /** get_usage percentages are already 0-100. */
 export function claudeUsageResponseToLimits(input: {
-  readonly response: Pick<SDKControlGetUsageResponse, "rate_limits_available" | "rate_limits">;
+  readonly response: Pick<ClaudeUsageResponse, "rate_limits_available" | "rate_limits">;
   readonly checkedAt: string;
 }): { readonly limits: ServerProviderUsageLimits; readonly names: ClaudeScopedLimitNames } {
   const { response, checkedAt } = input;
