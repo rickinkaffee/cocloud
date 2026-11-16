@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {fileURLToPath} from 'node:url';
+const origin='https://workbench.example';
+const data=await mkdtemp(join(tmpdir(),'browser-gateway-test-'));
+const serve=async handler=>{const server=http.createServer(handler);server.listen(0,'127.0.0.1');await once(server,'listening');return server};
+const url=server=>'http://127.0.0.1:'+server.address().port;
+let forwarded;
+const upstream=await serve((req,res)=>{forwarded=req.headers;res.writeHead(200,{'Content-Type':'text/html'});res.end('<html><body>synthetic viewer</body></html>')});
+const auth=await serve((req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify({authenticated:!!req.headers.cookie,permissions:req.headers.cookie==='session=owner'?['preview:operate','environment:maintain']:[]}))});
+const reservation=await serve(()=>{});const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
+await mkdir(join(data,'run'));await writeFile(join(data,'run/endpoint.json'),JSON.stringify({url:origin+'/session/synthetic/'}));
+const child=spawn(process.execPath,[fileURLToPath(new URL('./gateway.mjs',import.meta.url))],{env:{...process.env,WORKBENCH_ORIGIN:origin,WORKBENCH_INTERNAL_URL:url(auth),BROWSER_UPSTREAM_URL:url(upstream),BROWSER_GATEWAY_PORT:String(port),BROWSER_DATA:data},stdio:['ignore','pipe','inherit']});
+try{
+ await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('gateway exited before ready')})]);
+ const base='http://127.0.0.1:'+port;
+ assert.equal((await fetch(base+'/floe/')).status,401);
+ assert.equal((await fetch(base+'/floe/',{headers:{Cookie:'session=guest'}})).status,401);
+ assert.equal((await fetch(base+'/floe/',{headers:{Cookie:'session=owner',Origin:'https://other.test'}})).status,401);
+ assert.equal((await fetch(base+'/floe/',{headers:{Cookie:'session=owner','Sec-Fetch-Site':'cross-site'}})).status,401);
+ const entry=await fetch(base+'/floe/',{headers:{Cookie:'session=owner'},redirect:'manual'});
+ assert.equal(entry.status,302);assert.equal(entry.headers.get('Location'),'/session/synthetic/');
+ assert.equal((await fetch(base+'/session/other/',{headers:{Cookie:'session=owner'}})).status,404);
+ console.log('Browser gateway basic access checks passed');
+ const viewer=await fetch(base+'/session/synthetic/',{headers:{Cookie:'session=owner',Authorization:'Bearer synthetic',Origin:origin,'X-Forwarded-For':'192.0.2.1'}});
+ assert.equal(viewer.status,200);assert.match(await viewer.text(),/touch-scroll.js/);
+ assert.equal(forwarded.cookie,undefined);assert.equal(forwarded.authorization,undefined);assert.equal(forwarded['x-forwarded-for'],undefined);assert.equal(forwarded.origin,url(upstream));
+ const touch=await fetch(base+'/session/synthetic/touch-scroll.js',{headers:{Cookie:'session=owner'}});
+ assert.equal(touch.status,200);assert.match(touch.headers.get('Content-Type'),/javascript/);
+ console.log('Browser gateway regression passed: session, scopes, origin, routing, injected local source and credential stripping');
+}finally{
+ child.kill('SIGTERM');if(child.exitCode===null)await once(child,'exit');
+ await Promise.all([new Promise(resolve=>auth.close(resolve)),new Promise(resolve=>upstream.close(resolve))]);
+ await rm(data,{recursive:true,force:true});
+}

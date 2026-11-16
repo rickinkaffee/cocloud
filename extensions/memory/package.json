@@ -1,0 +1,9 @@
+{
+  "name": "open-workbench-memory",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright-core": "1.60.0"
+  }
+}

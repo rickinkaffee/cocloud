@@ -1,0 +1,8 @@
+{
+  "name": "open-workbench-browser",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@floegence/floebrowser": "0.1.28"
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Incremental read-only history catalogue
+[Service]
+EnvironmentFile=/etc/open-workbench/memory.env
+Type=oneshot
+ExecStart=/opt/open-workbench-memory/venv/bin/python /opt/open-workbench/extensions/memory/core.py
+Nice=15
+CPUQuota=40%
+IOWeight=10
+MemoryMax=512M
+TimeoutStartSec=1800

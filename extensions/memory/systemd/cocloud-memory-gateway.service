@@ -1,0 +1,18 @@
+[Unit]
+Description=Authenticated memory UI and model bridge
+After=network.target
+[Service]
+EnvironmentFile=/etc/open-workbench/memory.env
+Type=simple
+User=workbench
+WorkingDirectory=/opt/open-workbench/extensions/memory
+ExecStart=node /opt/open-workbench/extensions/memory/gateway.mjs
+Restart=on-failure
+RestartSec=10
+Nice=10
+CPUQuota=70%
+MemoryMax=512M
+MemorySwapMax=128M
+OOMScoreAdjust=500
+[Install]
+WantedBy=multi-user.target

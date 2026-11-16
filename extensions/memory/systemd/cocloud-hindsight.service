@@ -1,0 +1,18 @@
+[Unit]
+Description=Hindsight memory engine
+After=network.target
+[Service]
+Type=simple
+User=workbench
+WorkingDirectory=/opt/open-workbench/extensions/memory
+ExecStart=/opt/open-workbench-memory/venv/bin/hindsight-api
+EnvironmentFile=/etc/open-workbench/memory.env
+Restart=on-failure
+RestartSec=10
+Nice=10
+CPUQuota=90%
+MemoryMax=2G
+MemorySwapMax=128M
+OOMScoreAdjust=500
+[Install]
+WantedBy=multi-user.target

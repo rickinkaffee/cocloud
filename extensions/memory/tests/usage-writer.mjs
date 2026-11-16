@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {mkdtempSync,rmSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';
+import {createUsageWriter} from '../usage-writer.mjs';
+const dir=mkdtempSync(join(tmpdir(),'memory-lock-'));const a=new DatabaseSync(join(dir,'test.db')),b=new DatabaseSync(join(dir,'test.db'));
+a.exec('CREATE TABLE state(key TEXT PRIMARY KEY,value TEXT);BEGIN IMMEDIATE');
+let stats={requests:1};const write=createUsageWriter(b,()=>stats);
+assert.equal(write(),false);stats.requests=2;a.exec('COMMIT');
+await new Promise(r=>setTimeout(r,1200));assert.equal(JSON.parse(b.prepare("SELECT value FROM state WHERE key='usage'").get().value).requests,2);
+a.close();b.close();rmSync(dir,{recursive:true});console.log('SQLite lock regression passed: no throw, deferred usage saved after unlock');

@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh unified history catalogue
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+Unit=cocloud-memory-scan.service
+[Install]
+WantedBy=timers.target
