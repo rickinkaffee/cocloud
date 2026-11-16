@@ -560,52 +560,7 @@ function ProjectDetail({
               />
             }
           />
-          <SettingsRow
-            title="Project icon"
-            description={
-              projectIcon?.kind === "lucide"
-                ? `${projectIcon.name} · ${projectIcon.color}`
-                : projectIcon?.kind === "monogram"
-                  ? `${projectIcon.text} · ${projectIcon.color}`
-                  : projectIcon?.kind === "emoji"
-                    ? projectIcon.emoji
-                    : (faviconPath ?? "Automatic")
-            }
-            resetAction={
-              group.memberProjects.some((member) => !hasDefaultProjectIcon(member)) ? (
-                <SettingResetButton
-                  label="project icon"
-                  disabled={isSavingFavicon || !canEditGroup}
-                  onClick={() => void setProjectIcon(defaultProjectIcon)}
-                />
-              ) : null
-            }
-            control={
-              <div className="flex items-center gap-2">
-                <ProjectFavicon project={representative} className="size-6" />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  aria-label="Choose a project icon"
-                  disabled={isSavingFavicon || !canEditGroup}
-                  onClick={() => setIconPickerOpen(true)}
-                >
-                  Choose icon
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  type="button"
-                  aria-label="Choose a project icon file"
-                  disabled={isSavingFavicon || !canEditGroup}
-                  onClick={() => setFaviconPickerOpen(true)}
-                >
-                  Choose file
-                </Button>
-              </div>
-            }
-          />
+
           {canOrganize ? (
             <>
               <SettingsRow

@@ -1,3 +1,4 @@
+import { cocloudVisibleClient } from "../../extensions/authorized-client-policy";
 import { SessionPermissions } from "./SessionPermissions";
 import { useSearch } from "@tanstack/react-router";
 import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
@@ -432,7 +433,7 @@ function ConnectionsSettingsContent({
     const event = authAccessChanges.data;
     if (event?.type !== "snapshot") return [];
     return sortDesktopClientSessions(
-      event.payload.clientSessions.map((clientSession: AuthClientSession) =>
+      event.payload.clientSessions.filter(cocloudVisibleClient).map((clientSession: AuthClientSession) =>
         toDesktopClientSessionRecord(clientSession),
       ),
     );

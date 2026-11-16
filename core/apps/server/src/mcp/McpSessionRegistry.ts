@@ -31,6 +31,7 @@ export interface McpSessionRegistryShape {
   readonly resolve: (
     rawToken: string,
   ) => Effect.Effect<McpInvocationContext.McpThreadInvocationScope | undefined>;
+  readonly resolveForTermination: (rawToken: string, method: string) => Effect.Effect<McpInvocationContext.McpThreadInvocationScope | undefined>;
   readonly touch: (threadId: ThreadId) => Effect.Effect<void>;
   readonly revokeProviderSession: (providerSessionId: string) => Effect.Effect<void>;
   readonly revokeThread: (threadId: ThreadId) => Effect.Effect<void>;
@@ -84,6 +85,8 @@ const makeWithOptions = Effect.fn("McpSessionRegistry.make")(function* (
   const httpServer = yield* HttpServer.HttpServer;
   const state = yield* SynchronizedRef.make<RegistryState>({ records: new Map() });
   const currentTimeMillis = options.now ? Effect.sync(options.now) : Clock.currentTimeMillis;
+  const retired = new Map<string, {scope: McpInvocationContext.McpThreadInvocationScope; expiresAt: number}>();
+  const pruneRetired = (now: number) => { for (const [hash, entry] of retired) if (entry.expiresAt <= now) retired.delete(hash); };
   const livenessWindowMs = options.livenessWindowMs ?? DEFAULT_LIVENESS_WINDOW_MS;
   const endpoint = NetAddress.isInetAddress(httpServer.address)
     ? `http://${getHttpMcpEndpointHost(httpServer.address.address)}:${httpServer.address.port}/mcp`
@@ -171,14 +174,36 @@ const makeWithOptions = Effect.fn("McpSessionRegistry.make")(function* (
     },
   );
 
-  const revokeWhere = (predicate: (record: CredentialRecord) => boolean) =>
-    SynchronizedRef.update(state, ({ records }) => ({
-      records: new Map(Array.from(records).filter(([, record]) => !predicate(record))),
-    }));
+  const resolveForTermination: McpSessionRegistryShape["resolveForTermination"] = Effect.fn("McpSessionRegistry.resolveForTermination")(function* (rawToken, method) {
+    if (!rawToken || method !== "DELETE") return undefined;
+    const hash = yield* hashToken(rawToken);
+    const now = yield* currentTimeMillis;
+    return yield* SynchronizedRef.modify(state, (current) => {
+      pruneRetired(now);
+      return [retired.get(hash)?.scope, current] as const;
+    });
+  });
+  const revokeWhere = Effect.fn("McpSessionRegistry.revokeWhere")(function* (predicate: (record: CredentialRecord) => boolean) {
+    const now = yield* currentTimeMillis;
+    yield* SynchronizedRef.update(state, ({records}) => {
+      pruneRetired(now);
+      const next = new Map(records);
+      for (const [hash, record] of records) {
+        if (!predicate(record)) continue;
+        next.delete(hash);
+        // Naturally expired records do not gain a termination grace period.
+        if (now - record.lastAliveAt > livenessWindowMs || retired.has(hash)) continue;
+        while (retired.size >= 1024) retired.delete(retired.keys().next().value!);
+        retired.set(hash, {scope: record.scope, expiresAt: now + 120_000});
+      }
+      return {records: next};
+    });
+  });
 
   return McpSessionRegistry.of({
     issue,
     resolve,
+    resolveForTermination,
     touch,
     revokeProviderSession: Effect.fn("McpSessionRegistry.revokeProviderSession")(
       function* (providerSessionId) {
@@ -188,7 +213,7 @@ const makeWithOptions = Effect.fn("McpSessionRegistry.make")(function* (
     revokeThread: Effect.fn("McpSessionRegistry.revokeThread")(function* (threadId) {
       yield* revokeWhere((record) => record.scope.thread.threadId === threadId);
     }),
-    revokeAll: SynchronizedRef.set(state, { records: new Map() }),
+    revokeAll: revokeWhere(() => true),
   });
 });
 

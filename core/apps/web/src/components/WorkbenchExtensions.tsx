@@ -3,14 +3,16 @@ import { usePrimaryEnvironmentId } from "../state/environments";
 import { useWorkbenchI18n } from "../i18n";
 import "../extensions/motion.css";
 import { CocloudMemoryEntry } from "../extensions/memory-entry.js";
-import { CocloudProxyEntry } from "../extensions/proxy-entry.js";
+import { WorkbenchConnectionCenter } from "./WorkbenchConnectionCenter";
+import { WorkbenchFolderUpload } from "./WorkbenchFolderUpload";
 export function WorkbenchExtensions() {
   const environmentId = usePrimaryEnvironmentId();
   const { language, setLanguage } = useWorkbenchI18n();
   return (
     <div className="px-2 py-1">
       <CocloudMemoryEntry language={language} />
-      <CocloudProxyEntry />
+      <WorkbenchConnectionCenter />
+      <WorkbenchFolderUpload />
       <a className="block px-3 py-2 text-xs" href="/floe/" target="_blank" rel="noreferrer">
         Shared browser
       </a>

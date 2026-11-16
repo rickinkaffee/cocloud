@@ -1,3 +1,21 @@
+// Attachments already have a scoped URL and Content-Disposition from the host.
+// Let the browser stream them to disk instead of buffering the entire response
+// in fetch().blob(), which loses the download on body/network failure.
+export async function saveAttachment(url: string, name: string, fallback: any) {
+  const target = new URL(url, window.location.href);
+  if (navigator.userAgent.includes('CocloudAndroid/') ||
+      target.origin !== window.location.origin ||
+      !/^https?:$/.test(target.protocol) || !target.pathname.startsWith('/api/assets/')) {
+    return fallback(url, name);
+  }
+  const link = document.createElement('a');
+  link.href = target.href;
+  link.download = name;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  try { link.click(); } finally { link.remove(); }
+}
+
 // The factory uses the pinned host's React, path parser and authenticated download
 // hook. Keep the original memoized chip intact (including its compiler caches).
 export function withFileDownload(React: any, Original: any, useMediaActions: any, splitPath: any) {

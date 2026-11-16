@@ -210,6 +210,7 @@ const makeMcpAuthMiddleware = Effect.gen(function* () {
     const token = parseBearerToken(request) ?? "";
     const invocation =
       (yield* registry.resolve(token)) ??
+      (request.method === "DELETE" ? yield* registry.resolveForTermination(token, request.method) : undefined) ??
       (Option.isSome(clients) && token.length > 0
         ? yield* clients.value.authenticate(request)
         : undefined);

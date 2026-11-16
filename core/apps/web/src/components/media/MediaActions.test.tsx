@@ -184,3 +184,21 @@ it.each(["save", "copy-image", "open-file"])(
     expect(state.openFile).not.toHaveBeenCalled();
   },
 );
+
+it("hands an authenticated attachment to the browser without buffering media", async () => {
+  state.sessions.set(environmentId, granted);
+  vi.stubGlobal("window", { location: { href: "https://host.test/", origin: "https://host.test" } });
+  vi.stubGlobal("navigator", { userAgent: "Browser" });
+  const anchor = { href: "", download: "", style: {}, click: vi.fn(), remove: vi.fn() };
+  vi.stubGlobal("document", { body: { appendChild: vi.fn() }, createElement: () => anchor });
+  const source: MediaActionSource = {
+    ...hostSource("media-file"),
+    name: "合集.zip",
+    asset: { environmentId, resource: { _tag: "media-file", threadId, path: "/tmp/collection.zip", disposition: "attachment" } },
+  };
+  await useMediaActions(source).save();
+  expect(state.mint).toHaveBeenCalledWith({ environmentId, input: { resource: source.asset!.resource } });
+  expect(anchor.href).toBe("https://host.test/api/assets/image.png");
+  expect(anchor.click).toHaveBeenCalledOnce();
+  expect(state.download).not.toHaveBeenCalled();
+});

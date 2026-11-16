@@ -96,7 +96,7 @@ Each installation creates a new browser profile. Cookies, browsing history and s
 
 ### Project import
 
-Run `extensions/project-import/project-import-server.mjs` and proxy `/api/cocloud/imports*` to loopback 3775. Set `WORKBENCH_PROJECTS` to an empty workspace root. The service keeps staging files in that root and requires authentication, filesystem scope, an explicit import header and the configured origin. It rejects path traversal and does not overwrite existing projects.
+Run `extensions/project-import/project-import-server.mjs` and proxy `/api/cocloud/imports*` to loopback 3775. Set `WORKBENCH_PROJECTS` to your dedicated workspace root. The service keeps staging files in that root and requires authentication, filesystem scope, an explicit import header and the configured origin. It rejects path traversal. Existing-project uploads merge folders and explicitly review each same-name file before skip, overwrite or keep-both; selected-file conflict checks and backups protect concurrent edits. See [folder upload configuration](extensions/project-import/README.md).
 
 ### Android client
 
@@ -125,3 +125,20 @@ on/off switch with Google/GitHub connection latency checks. Configure your own
 loopback proxy and systemd unit using `config/proxy.env.example`; no subscription,
 credentials or proxy binary is included. Rebuild the web client for the UI and
 deploy the authenticated bridge separately.
+
+
+## File transfers and connection center
+
+The maintained source now includes folder placement and skip/overwrite/keep-both,
+resumable bounded transfers, selected-target overwrite checks, file properties and
+streamed downloads, and bounded MCP termination cleanup. Project icons and their
+settings are removed while names and actions remain. Rebuild the complete web and
+server sources with `scripts/build-core.sh`.
+
+Configure the [upload sidecar](extensions/project-import/README.md) with
+`config/project-import.env.example` for sidebar uploads to existing local projects
+and file context-menu actions. The connection center combines proxy and authorized
+client status with an [optional WeChat gateway](extensions/wechat/README.md).
+Supply your own compatible API, noVNC desktop and credentials for WeChat; accounts
+and runtime data are not distributed. See [sync notes](docs/SYNC-NOTES.zh-CN.md)
+and [attachment download details](docs/DOWNLOADS.md).

@@ -8,6 +8,8 @@ import * as NodeURL from "node:url";
 import { authenticateWorkbench } from "./workbench-auth.mjs";
 import { createProjectSync, validRelativePath } from "./project-sync.mjs";
 
+import { placeUpload } from "./upload-destination.mjs";
+
 const PREFIX = "/api/cocloud/imports";
 const CHUNK = 8 * 1024 * 1024;
 const MAX_FILES = 50_000;
@@ -105,7 +107,7 @@ async function jsonBody(request) {
 export async function createImportServer({
   authenticate = authenticateWorkbench,
   root = process.env.WORKBENCH_PROJECTS || "/var/lib/open-workbench/projects",
-  publicOrigin = process.env.COCLOUD_PUBLIC_ORIGIN ?? "https://workbench.example",
+  publicOrigin = process.env.WORKBENCH_ORIGIN ?? "https://workbench.example",
   now = Date.now,
   resolveProject,
 } = {}) {
@@ -126,22 +128,58 @@ export async function createImportServer({
       if (locks.get(id) === task) locks.delete(id);
     }
   }
+  const stateCache = new Map();
+  const progressCounts = new Map();
+  function remember(id, value) {
+    stateCache.delete(id); stateCache.set(id, value);
+    if (stateCache.size > 16) {const oldest = stateCache.keys().next().value; stateCache.delete(oldest); progressCounts.delete(oldest);}
+  }
   const statePath = (id) => NodePath.join(staging, id, "state.json");
   async function state(id) {
     if (!/^[0-9a-f-]{36}$/.test(id)) fail(404, "upload_not_found");
-    let value;
+    let value = stateCache.get(id);
     try {
-      value = JSON.parse(await NodeFSP.readFile(statePath(id), "utf8"));
-    } catch {
+      if (!value) {
+        value = JSON.parse(await NodeFSP.readFile(statePath(id), "utf8"));
+        if (value.applied && !value.committed) {
+          const journal = await NodeFSP.readFile(NodePath.join(staging, id, 'applied.jsonl'), 'utf8').catch(error => {if (error.code !== 'ENOENT') throw error; return '';});
+          const lines = journal.split('\n'); lines.pop();
+          for (const line of lines) {
+            const path = JSON.parse(line);
+            if (value.files[value.applied.length]?.path !== path) fail(409, 'sync_partial');
+            value.applied.push(path);
+          }
+          progressCounts.set(id, value.applied.length);
+        }
+      }
+    } catch (error) {
+      if (error instanceof ImportError) throw error;
       fail(404, "upload_not_found");
     }
     if (now() - value.createdAt > EXPIRES) fail(410, "upload_expired");
+    remember(id, value);
     return value;
   }
   async function persist(id, value) {
+    if (value.applied && !value.committed && progressCounts.has(id)) {
+      const count = progressCounts.get(id);
+      if (value.applied.length > count) {
+        await NodeFSP.appendFile(NodePath.join(staging, id, 'applied.jsonl'),
+          value.applied.slice(count).map(path => JSON.stringify(path) + '\n').join(''), {mode: 0o600});
+        progressCounts.set(id, value.applied.length);
+      }
+      remember(id, value);
+      return;
+    }
     const temp = `${statePath(id)}.tmp`;
     await NodeFSP.writeFile(temp, JSON.stringify(value), { mode: 0o600 });
     await NodeFSP.rename(temp, statePath(id));
+    if (value.applied) progressCounts.set(id, value.applied.length);
+    if (value.committed) {
+      progressCounts.delete(id);
+      await NodeFSP.rm(NodePath.join(staging, id, 'applied.jsonl'), {force: true});
+    }
+    remember(id, value);
   }
   async function cleanup() {
     for (const entry of await NodeFSP.readdir(staging, { withFileTypes: true })) {
@@ -150,8 +188,10 @@ export async function createImportServer({
       try {
         const info = await NodeFSP.stat(statePath(entry.name));
         const value = JSON.parse(await NodeFSP.readFile(statePath(entry.name), "utf8"));
-        if (now() - info.mtimeMs > EXPIRES && !value.applied)
+        if (now() - info.mtimeMs > EXPIRES && !value.applied) {
+          stateCache.delete(entry.name); progressCounts.delete(entry.name);
           await NodeFSP.rm(NodePath.join(staging, entry.name), { recursive: true, force: true });
+        }
       } catch (error) {
         if (error.code !== "ENOENT") throw error;
       }
@@ -195,21 +235,78 @@ export async function createImportServer({
       if (await sync.handle(request, response, url, reply)) return;
       if (url.pathname === `${PREFIX}/config` && request.method === "GET")
         return reply(200, { root, maxFiles: MAX_FILES, maxBytes: MAX_BYTES, chunkBytes: CHUNK });
+      if (url.pathname === `${PREFIX}/destination` && request.method === 'GET') {
+        const {name} = validateManifest({name: url.searchParams.get('name'), files: []});
+        return reply(200, await sync.describeNamed(name));
+      }
       if (url.pathname === PREFIX && request.method === "POST") {
         const body = await jsonBody(request);
-        const manifest = validateManifest(body);
-        const target = body.projectId
-          ? await sync.prepare(body.projectId, body.baseVersion, request.headers)
+        let manifest = validateManifest(body);
+        let target = body.projectId
+          ? await sync.prepare(body.projectId, body.baseVersion, request.headers, {manifest, destination: body.destination})
           : null;
+        if (body.destination) {
+          const option = body.destination;
+          if (!['folder', 'root'].includes(option.placement) ||
+              !['skip', 'keep', 'overwrite'].includes(option.conflict)) fail(400, 'invalid_upload_destination');
+          if (target) {
+            const current = await sync.manifest(target.path, {uploadInventory: true});
+            if (!target.scoped && current.version !== target.baseVersion) fail(409, 'sync_conflict');
+            if (target.scoped) sync.checkReviewed(target.path, target.baseVersion, current, {manifest, destination: option});
+            manifest = validateManifest(placeUpload(manifest, current, option, fail));
+            if (target.scoped) {
+              const versions = new Map(current.files.map(file => [file.path, file.version]));
+              target.fileVersions = Object.fromEntries(manifest.files.map(file => [file.path, versions.get(file.path) ?? null]));
+            }
+          } else {
+            if (option.placement !== 'folder') fail(400, 'invalid_upload_destination');
+            const named = await sync.describeNamed(manifest.name);
+            if (named.exists || option.baseVersion) {
+              target = await sync.prepareNamed(manifest.name, option.baseVersion, {manifest, destination: option, named: true});
+              const current = await sync.manifest(target.path, {uploadInventory: true});
+              if (target.scoped) sync.checkReviewed(target.path, target.baseVersion, current, {manifest, destination: option, named: true});
+              manifest = validateManifest(placeUpload(manifest, current, {...option, placement: 'root'}, fail));
+              if (target.scoped) {
+                const versions = new Map(current.files.map(file => [file.path, file.version]));
+                target.fileVersions = Object.fromEntries(manifest.files.map(file => [file.path, versions.get(file.path) ?? null]));
+              }
+            }
+          }
+        }
         const space = await NodeFSP.statfs(root);
         if (space.bavail * space.bsize < manifest.totalBytes + 256 * 1024 ** 2)
           fail(507, "insufficient_disk_space");
+        // Reuse only an identical, uncommitted upload with the same reviewed target.
+        const signature = value => NodeCrypto.createHash('sha256').update(JSON.stringify({
+          name: value.name, files: value.files, directories: value.directories,
+          target: value.target, destination: value.destination,
+        })).digest('hex');
+        const key = signature({...manifest, target, destination: body.destination});
+        for (const entry of await NodeFSP.readdir(staging, {withFileTypes: true})) {
+          if (!entry.isDirectory() || !/^[0-9a-f-]{36}$/.test(entry.name)) continue;
+          let previous;
+          try {previous = await state(entry.name);} catch {continue;}
+          if (previous.committed || previous.applied || signature(previous) !== key) continue;
+          return locked(entry.name, async () => {
+            const current = await state(entry.name);
+            if (current.committed || current.applied) fail(409, 'sync_conflict');
+            const offsets = [], exists = [];
+            for (const file of current.files) {
+              const info = await NodeFSP.lstat(NodePath.join(staging, entry.name, 'content', ...file.path.split('/')))
+                .catch(error => {if (error.code !== 'ENOENT') throw error; return null;});
+              if (info && (!info.isFile() || info.size > file.size)) fail(409, 'sync_conflict');
+              offsets.push(info?.size ?? 0); exists.push(!!info);
+            }
+            return reply(201, {id: entry.name, name: current.name, totalBytes: current.totalBytes,
+              fileCount: current.files.length, resumed: true, offsets, exists});
+          });
+        }
         const id = NodeCrypto.randomUUID();
         await NodeFSP.mkdir(NodePath.join(staging, id, "content"), {
           recursive: true,
           mode: 0o700,
         });
-        await persist(id, { ...manifest, target, id, createdAt: now(), committed: null });
+        await persist(id, { ...manifest, target, destination: body.destination, id, createdAt: now(), committed: null });
         return reply(201, {
           id,
           name: manifest.name,
@@ -223,7 +320,15 @@ export async function createImportServer({
       if (!match) return reply(404, { error: "not_found" });
       const id = match[1];
       const result = await locked(id, async () => {
+        if (request.destroyed) fail(408, 'upload_request_aborted');
         const upload = await state(id);
+        if (request.method === 'GET' && match[2] === 'files') {
+          const file = upload.files[Number(match[3])];
+          if (!file) fail(404, 'file_not_found');
+          const path = NodePath.join(upload.committed ?? NodePath.join(staging, id, 'content'), ...file.path.split('/'));
+          const info = await NodeFSP.stat(path).catch(error => {if (error.code !== 'ENOENT') throw error; return null;});
+          return {offset: info?.size ?? 0, exists: !!info?.isFile(), committed: !!upload.committed};
+        }
         if (request.method === "GET" && !match[2] && !match[4]) {
           const offsets = [];
           for (const file of upload.files) {
@@ -247,6 +352,7 @@ export async function createImportServer({
         if (request.method === "DELETE" && !match[2] && !match[4]) {
           if (!upload.committed && !upload.applied)
             await NodeFSP.rm(NodePath.join(staging, id), { recursive: true, force: true });
+          stateCache.delete(id); progressCounts.delete(id);
           return { cancelled: true };
         }
         if (request.method === "PUT" && match[2] === "files") {
@@ -344,7 +450,7 @@ export async function createImportServer({
               mode: 0o700,
             });
           if (upload.target) {
-            return locked(`project:${upload.target.projectId}`, async () => {
+            return locked(`project:${upload.target.path}`, async () => {
               upload.committed = await sync.commit(upload, content, request.headers, () =>
                 persist(id, upload),
               );
@@ -369,6 +475,7 @@ export async function createImportServer({
               break;
             } catch (error) {
               if (error.code !== "EEXIST") throw error;
+              if (upload.destination) fail(409, "sync_conflict");
             }
           }
           if (!destination) fail(409, "folder_name_conflict");
@@ -412,7 +519,7 @@ export async function createImportServer({
 
 if (process.argv[1] && import.meta.url === NodeURL.pathToFileURL(process.argv[1]).href) {
   const server = await createImportServer();
-  server.listen(3775, "127.0.0.1");
+  server.listen(Number(process.env.IMPORT_PORT || 3775), "127.0.0.1");
   const stop = () => {
     server.close();
     server.closeIdleConnections();

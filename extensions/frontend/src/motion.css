@@ -18,3 +18,23 @@ nav[data-workbench-tools]{transform:none!important;translate:none!important;will
 .cocloud-proxy-switch:disabled{opacity:.5;cursor:not-allowed}
 .cocloud-proxy-switch-thumb{display:block;width:16px;height:16px;border-radius:999px;background:var(--background);box-shadow:0 1px 2px #0002;pointer-events:none;transition:transform .15s}
 @media(prefers-reduced-motion:reduce){.cocloud-proxy-switch,.cocloud-proxy-switch-thumb{transition:none}}
+
+.cocloud-connection-trigger:focus-visible{outline:2px solid var(--ring);outline-offset:3px;border-radius:6px}
+.cocloud-connection-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:2px 0 4px;font-size:11px;line-height:1.6}
+.cocloud-connection-summary-item{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;white-space:nowrap}
+.cocloud-connection-icon{width:18px;height:18px;flex-shrink:0;color:var(--muted-foreground)}
+.cocloud-connection-summary-item[data-state=online] .cocloud-connection-icon{color:#16a34a}
+.cocloud-connection-summary-item[data-state=offline] .cocloud-connection-icon{color:#dc2626}
+.dark .cocloud-connection-summary-item[data-state=online] .cocloud-connection-icon{color:#4ade80}
+.dark .cocloud-connection-summary-item[data-state=offline] .cocloud-connection-icon{color:#f87171}
+.cocloud-connection-count{font-variant-numeric:tabular-nums}
+.cocloud-connection-settings>section{border-top:1px solid var(--sidebar-border);padding:8px 0}
+.cocloud-connection-settings>[data-workbench-devices]{border:0;border-top:1px solid var(--sidebar-border);border-radius:0;background:transparent;padding:8px 0}
+
+.cocloud-file-properties { box-sizing:border-box; color:var(--foreground); background:var(--background); border:1px solid var(--border); border-radius:10px; padding:20px; width:460px; max-width:calc(100vw - 32px); max-height:85dvh; overflow:auto; box-shadow:0 12px 48px #0004; }
+.cocloud-file-properties::backdrop { background:#0006; }
+.cocloud-file-properties h2 { font-size:16px; font-weight:600; margin:0 0 16px; overflow-wrap:anywhere; }
+.cocloud-file-properties dl { display:grid; grid-template-columns:76px minmax(0,1fr); gap:12px; font-size:13px; }
+.cocloud-file-properties dt { opacity:.65; }
+.cocloud-file-properties dd { margin:0; overflow-wrap:anywhere; user-select:text; }
+.cocloud-file-properties button { display:block; margin:20px 0 0 auto; border:1px solid var(--border); border-radius:6px; padding:6px 22px; cursor:pointer; }

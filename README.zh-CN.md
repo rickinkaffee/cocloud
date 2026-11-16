@@ -102,3 +102,16 @@ node apps/server/dist/bin.mjs serve \
 Google／GitHub 的连接延迟，不做下载测速。使用 `config/proxy.env.example` 配置
 自己的本地代理、systemd 服务及工作台地址。仓库不附订阅、节点、凭据或代理程序。
 前端需重新构建；认证控制服务独立部署。
+
+
+## 文件上传与连接中心
+
+本轮已同步上传位置选择、同名文件跳过／覆盖／保留、断点续传、超时重试、
+覆盖冲突范围修复、文件下载／属性、项目图标移除及 MCP 退出清理。
+侧栏“上传文件夹”选择当前服务器的已注册项目；使用
+`config/project-import.env.example` 配置独立上传服务，见
+[文件传输部署说明](extensions/project-import/README.md)。
+连接中心整合代理、授权数量和微信状态；设备管理使用原有授权设置页面。
+[微信网关](extensions/wechat/README.md)为可选接入，需要自行提供兼容 API、
+noVNC 桌面及账号，仓库不附带运行实例。细节和边界见
+[同步说明](docs/SYNC-NOTES.zh-CN.md)与[附件下载说明](docs/DOWNLOADS.md)。

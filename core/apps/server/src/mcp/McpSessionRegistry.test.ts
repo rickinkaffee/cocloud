@@ -222,3 +222,45 @@ it.effect.each(["provider-session", "thread", "all"] as const)(
       expect(yield* registry.resolve(token)).toBeUndefined();
     }),
 );
+
+for (const kind of ["provider-session", "thread", "all"] as const) {
+  it.effect(`allows only bounded DELETE cleanup after ${kind} revocation`, () => Effect.gen(function* () {
+    let now = 1_000;
+    const registry = yield* makeRegistry(() => now);
+    const threadId = ThreadId.make("cleanup-test");
+    const issued = yield* registry.issue({threadId, providerInstanceId: ProviderInstanceId.make("codex")});
+    const token = issued.config.authorizationHeader.slice(7);
+    const revoke = kind === "provider-session" ? registry.revokeProviderSession(issued.config.providerSessionId)
+      : kind === "thread" ? registry.revokeThread(threadId) : registry.revokeAll;
+    yield* revoke;
+    now += 60_000;
+    expect(yield* registry.resolve(token)).toBeUndefined();
+    for (const method of ["GET", "POST", "PUT", "PATCH", "delete"]) {
+      expect(yield* registry.resolveForTermination(token, method)).toBeUndefined();
+    }
+    expect((yield* registry.resolveForTermination(token, "DELETE"))?.thread.threadId).toBe(threadId);
+    expect((yield* registry.resolveForTermination(token, "DELETE"))?.thread.threadId).toBe(threadId);
+    expect(yield* registry.resolveForTermination("unknown", "DELETE")).toBeUndefined();
+    yield* revoke;
+    now += 60_000;
+    expect(yield* registry.resolveForTermination(token, "DELETE")).toBeUndefined();
+  }));
+}
+
+it.effect("does not grant cleanup to naturally expired credentials and bounds retained contexts", () => Effect.gen(function* () {
+  let now = 1_000;
+  const registry = yield* makeRegistry(() => now);
+  const request = {threadId: ThreadId.make("bounded-cleanup"), providerInstanceId: ProviderInstanceId.make("codex")};
+  const expired = yield* registry.issue(request);
+  now += 101;
+  yield* registry.revokeAll;
+  expect(yield* registry.resolveForTermination(expired.config.authorizationHeader.slice(7), "DELETE")).toBeUndefined();
+  const tokens: string[] = [];
+  for (let i = 0; i < 1025; i++) {
+    const issued = yield* registry.issue(request);
+    tokens.push(issued.config.authorizationHeader.slice(7));
+    yield* registry.revokeProviderSession(issued.config.providerSessionId);
+  }
+  expect(yield* registry.resolveForTermination(tokens[0]!, "DELETE")).toBeUndefined();
+  expect(yield* registry.resolveForTermination(tokens[1024]!, "DELETE")).toBeDefined();
+}));

@@ -863,6 +863,7 @@ it.effect("terminates HTTP MCP sessions with DELETE", () =>
         Layer.provide(ServerSettings.layerTest()),
         Layer.provide(
           Layer.mock(McpSessionRegistry.McpSessionRegistry)({
+            resolveForTermination: () => Effect.undefined,
             resolve: (presented) =>
               Effect.succeed(
                 presented === token
@@ -970,6 +971,7 @@ it.effect("admits provider and OAuth client credentials and points only clients 
         Layer.provide(ServerSettings.layerTest()),
         Layer.provide(
           Layer.mock(McpSessionRegistry.McpSessionRegistry)({
+            resolveForTermination: () => Effect.undefined,
             resolve: (token) =>
               Effect.succeed(
                 token === providerToken
@@ -1218,6 +1220,7 @@ it.effect("hides tools for links and refuses another environment while the beta 
         Layer.provide(McpToolAccessTestkit.liveThreadsLayer),
         Layer.provide(
           Layer.mock(McpSessionRegistry.McpSessionRegistry)({
+            resolveForTermination: () => Effect.undefined,
             resolve: (presented) => Effect.succeed(presented === token ? scope : undefined),
           }),
         ),
@@ -1323,6 +1326,7 @@ it.effect("lists pull request watch tools only to threads that are not delegated
         Layer.provide(ServerSettings.layerTest()),
         Layer.provide(
           Layer.mock(McpSessionRegistry.McpSessionRegistry)({
+            resolveForTermination: () => Effect.undefined,
             resolve: (token) => Effect.succeed(scopes.get(token)),
           }),
         ),
@@ -1432,6 +1436,7 @@ it.effect(
           Layer.provide(McpToolAccessTestkit.liveThreadsLayer),
           Layer.provide(
             Layer.mock(McpSessionRegistry.McpSessionRegistry)({
+            resolveForTermination: () => Effect.undefined,
               resolve: () => Effect.undefined,
             }),
           ),
@@ -1527,4 +1532,35 @@ it.effect(
         expect(yield* start("root/default")).toBe(400);
       }),
     ).pipe(Effect.provide(NodeHttpServer.layerTest)),
+);
+
+it.effect("cleans up two late provider transports after revocation without reauthorizing tools", () =>
+  Effect.scoped(Effect.gen(function* () {
+    let now = 1_000;
+    const registry = yield* McpSessionRegistry.__testing.make({now: () => now}).pipe(
+      Effect.provideService(ServerEnvironment.ServerEnvironment, ServerEnvironment.ServerEnvironment.of({
+        getEnvironmentId: Effect.succeed(environmentId), getDescriptor: Effect.die("unused"),
+      })),
+    );
+    const issued = yield* registry.issue({threadId, providerInstanceId: ProviderInstanceId.make("codex")});
+    yield* HttpRouter.serve(McpHttpServer.layerMcpTransport(Layer.empty).pipe(
+      Layer.provide(ServerSettings.layerTest()), Layer.provide(Layer.succeed(McpSessionRegistry.McpSessionRegistry, registry)),
+    ), {disableListenLog: true, disableLogger: true}).pipe(Layer.build);
+    const http = (yield* HttpClient.HttpClient).pipe(HttpClient.mapRequest(HttpClientRequest.setHeader("authorization", issued.config.authorizationHeader)));
+    const ids: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      const response = yield* http.post("/mcp", {headers: {accept: "application/json, text/event-stream"}, body: HttpBody.text(
+        JSON.stringify({jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-06-18", capabilities: {}, clientInfo: {name: "cleanup-test", version: "1"}}}), "application/json")});
+      expect(response.status).toBe(200); ids.push(response.headers["mcp-session-id"]!);
+    }
+    yield* registry.revokeThread(threadId);
+    now += 60_000;
+    expect((yield* http.post("/mcp", {headers: {accept: "application/json, text/event-stream"}})).status).toBe(401);
+    expect((yield* http.get("/mcp")).status).toBe(401);
+    expect((yield* http.del("/mcp")).status).toBe(400);
+    expect((yield* http.del("/mcp", {headers: {"mcp-session-id": "unknown"}})).status).toBe(404);
+    for (const id of ids) expect((yield* http.del("/mcp", {headers: {"mcp-session-id": id}})).status).toBe(204);
+    now += 60_000;
+    expect((yield* http.del("/mcp", {headers: {"mcp-session-id": ids[0]!}})).status).toBe(401);
+  })).pipe(Effect.provide(Layer.mergeAll(NodeHttpServer.layerTest, NodeServices.layer, NodeCrypto.layer))),
 );

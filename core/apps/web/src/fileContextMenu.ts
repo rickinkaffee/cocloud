@@ -1,3 +1,7 @@
+import * as FileProperties from "./extensions/file-properties";
+import { usePrimaryEnvironmentId } from "./state/environments";
+import { useEnvironmentScope } from "./state/session";
+import { AuthFilesystemReadScope } from "@t3tools/contracts";
 import {
   EDITORS,
   type ContextMenuItem,
@@ -19,6 +23,8 @@ import { toastManager } from "./components/ui/toast";
 import { useAtomValue } from "@effect/atom-react";
 
 export type FileContextMenuAction =
+  | "cocloud-download"
+  | "cocloud-properties"
   | "reveal-in-folder"
   | "open"
   /** Submenu parent; never the activated id. */
@@ -87,6 +93,9 @@ function buildFileContextMenuItems(input: {
 }
 
 export function useFileContextMenu(environmentId: EnvironmentId | null) {
+  const primaryEnvironmentId = usePrimaryEnvironmentId();
+  const canRead = useEnvironmentScope(environmentId, AuthFilesystemReadScope);
+  const sidecarAvailable = canRead && environmentId === primaryEnvironmentId;
   const openInEditor = useAtomCommand(shellEnvironment.openInEditor, { reportFailure: false });
   const serverConfig = useAtomValue(serverEnvironment.configValueAtom(environmentId));
 
@@ -112,6 +121,12 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
     const absolutePath = resolveFileContextMenuAbsolutePath(target);
     if (absolutePath === null || environmentId === null) return;
 
+    if (action === "cocloud-download" || action === "cocloud-properties") {
+      if (!sidecarAvailable) return;
+      try { await FileProperties.act(action, target.workspaceRoot ?? "", absolutePath, () => false); }
+      catch (error) { toastManager.add({type: "error", title: "文件操作失败", description: error instanceof Error ? error.message : "请重试"}); }
+      return;
+    }
     const reveal = action === "reveal-in-folder";
     const editor =
       action === "open" || reveal
@@ -136,15 +151,17 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
     });
   };
 
+  const buildItems = (target: FileContextMenuTarget): readonly ContextMenuItem<FileContextMenuAction>[] => {
+    const existing = buildFileContextMenuItems({hasAbsolutePath: resolveFileContextMenuAbsolutePath(target) !== null, capabilities});
+    return sidecarAvailable && resolveFileContextMenuAbsolutePath(target) !== null
+      ? [...existing, {id: "cocloud-download", label: "下载"}, {id: "cocloud-properties", label: "属性"}] : existing;
+  };
   const show = async (
     target: FileContextMenuTarget,
     position?: { x: number; y: number },
   ): Promise<void> => {
     const api = readLocalApi();
-    const items = buildFileContextMenuItems({
-      hasAbsolutePath: resolveFileContextMenuAbsolutePath(target) !== null,
-      capabilities,
-    });
+    const items = buildItems(target);
     if (items.length === 0 || api === undefined) return;
     const clicked = await api.contextMenu.show(items, position);
     if (clicked === null) return;
@@ -152,11 +169,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
   };
 
   return {
-    buildItems: (target: FileContextMenuTarget) =>
-      buildFileContextMenuItems({
-        hasAbsolutePath: resolveFileContextMenuAbsolutePath(target) !== null,
-        capabilities,
-      }),
+    buildItems,
     capabilities,
     activate,
     show,

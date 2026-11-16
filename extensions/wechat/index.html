@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>微信试用 · 工作台</title>
+<style>body{margin:0;background:#10151c;color:#e4eaf0;font:15px system-ui}header,section{padding:14px 18px}header{display:flex;gap:16px;align-items:center;flex-wrap:wrap}a{color:#8cc9ff}button,input{font:inherit;padding:9px;border:1px solid #425266;border-radius:6px}button{cursor:pointer;background:#1b744b;color:white}input{background:#17212d;color:white;max-width:90%;margin:4px}#screen{height:65vh;background:#080b0f}#status{color:#a5c9ae}#result{white-space:pre-wrap;overflow-wrap:anywhere}details{margin-top:12px}p{line-height:1.6;margin:8px 0}small{color:#a8b5c3}</style></head>
+<body><header><strong>微信小号 · 试用</strong><span id="status">正在连接…</span><button id="refresh">刷新状态</button><button id="reconnect">重连桌面</button><a href="/">返回工作台</a></header>
+<section><p>这是运行在服务器上的官方微信。首次登录请扫码，并在手机上确认。桌面会继续在后台运行，关闭此页不会停止微信。</p><small>如果用同一部手机，尝试保存二维码后在微信扫一扫中从相册识别；若微信不支持，需要用另一块屏幕显示二维码。</small></section>
+<div id="screen"></div><section><div id="desktop-status">正在连接桌面…</div>
+<details><summary>文字收发验证</summary><p>登录后填写准确的好友备注或名称。只有点击发送才会发出消息。</p><form id="send"><input id="contact" required placeholder="好友备注／名称"><input id="text" required placeholder="要发送的文字"><button>发送</button></form><button id="messages">查看最近收到的消息</button><pre id="result"></pre></details></section>
+<script type="module">
+import RFB from './desktop/core/rfb.js';
+const $=id=>document.getElementById(id);let rfb;
+async function api(path,options){const res=await fetch('./api/'+path,options);if(!res.ok)throw Error('请求失败：'+res.status);return res.json();}
+async function refresh(){try{const s=await api('status');$('status').textContent=(s.status||'状态未知')+(s.db_available?' · 消息接口已就绪':' · 消息读取尚未就绪');}catch(e){$('status').textContent='服务尚未就绪，请稍后刷新';}}
+async function connect(){if(rfb)rfb.disconnect();try{const res=await fetch('./vnc-config');if(!res.ok)throw Error('请先登录工作台');const {password}=await res.json();rfb=new RFB($('screen'),`${location.protocol==='https:'?'wss':'ws'}://${location.host}/wechat/desktop/websockify`,{credentials:{password}});rfb.scaleViewport=true;rfb.resizeSession=false;rfb.addEventListener('connect',()=>{$('desktop-status').textContent='桌面已连接';});rfb.addEventListener('disconnect',()=>{$('desktop-status').textContent='桌面连接已断开，点击“重连桌面”可恢复；微信可能仍在后台运行。';});rfb.addEventListener('securityfailure',()=>{$('desktop-status').textContent='桌面验证失败';});}catch(e){$('desktop-status').textContent=e.message;}}
+$('refresh').onclick=refresh;$('reconnect').onclick=connect;
+$('send').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{$('result').textContent=JSON.stringify(await api('messages/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation:$('contact').value,text:$('text').value,at:[]})}),null,2);}catch(e){$('result').textContent=e.message;}finally{button.disabled=false;}};
+$('messages').onclick=async()=>{try{$('result').textContent=JSON.stringify(await api('messages?after=0&limit=20&direction=incoming'),null,2);}catch(e){$('result').textContent=e.message;}};
+refresh();connect();setInterval(refresh,15000);
+</script></body></html>

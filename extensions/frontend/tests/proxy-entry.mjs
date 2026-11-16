@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const source=readFileSync(new URL('../src/proxy-entry.js',import.meta.url),'utf8').replace("import * as X from 'react';\n",'').replace('export function CocloudProxyEntry','function CocloudProxyEntry');
+const source=readFileSync(new URL('../src/proxy-entry.js',import.meta.url),'utf8').replace(/^import .*$/mg,'').replace('export function CocloudProxyEntry','function CocloudProxyEntry');
 let slots=[],index=0,requests=[],enabled=true,canControl=true,fail=false;
 const context=vm.createContext({X:{createElement:(tag,props,...children)=>({tag,props:props??{},children}),useState:initial=>{const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>slots[i]=value]}},Date,AbortSignal,fetch:async(url,options)=>{
  requests.push({url,options});
@@ -29,10 +29,10 @@ assert.equal(enabled,false);assert.equal(find(tree,'连接测速').props.disable
 assert.equal(nodes(tree).find(n=>n.props.role==='switch').props['aria-checked'],false);
 assert.equal(nodes(tree).find(n=>n.props.className==='cocloud-proxy-switch-thumb').props.style.transform,'translateX(0)');
 assert.equal(requests.at(-1).options.headers['X-Cocloud-Proxy'],'1');
-fail=true;await find(tree,'刷新状态').props.onClick();tree=render();assert.equal(nodes(tree).find(n=>n.props.role==='alert').children[0],'请先登录工作台');
-fail=false;canControl=false;await find(tree,'刷新状态').props.onClick();tree=render();assert.equal(nodes(tree).find(n=>n.props.role==='switch').props.disabled,true);
+fail=true;tree.children[0].props.onClick();tree=render();tree.children[0].props.onClick();await flush();tree=render();assert.equal(nodes(tree).find(n=>n.props.role==='alert').children[0],'请先登录工作台');
+fail=false;canControl=false;tree.children[0].props.onClick();tree=render();tree.children[0].props.onClick();await flush();tree=render();assert.equal(nodes(tree).find(n=>n.props.role==='switch').props.disabled,true);
 console.log('Proxy settings: sliding toggle, Google/GitHub latency only, removed description, lazy status, stale result clearing, auth errors and read-only sessions passed');
 
 assert.equal(readFileSync(new URL('../../../core/apps/web/src/extensions/proxy-entry.js',import.meta.url),'utf8'),readFileSync(new URL('../src/proxy-entry.js',import.meta.url),'utf8'),'core and extension source stay synchronized');
-assert.ok(readFileSync(new URL('../../../core/apps/web/src/components/WorkbenchExtensions.tsx',import.meta.url),'utf8').includes('<CocloudProxyEntry />'),'core mounts proxy settings');
+assert.ok(readFileSync(new URL('../../../core/apps/web/src/components/WorkbenchExtensions.tsx',import.meta.url),'utf8').includes('<WorkbenchConnectionCenter />'),'core mounts proxy settings');
 assert.ok(readFileSync(new URL('../../../core/apps/web/src/extensions/motion.css',import.meta.url),'utf8').includes('.cocloud-proxy-switch-thumb'),'core includes switch styling');

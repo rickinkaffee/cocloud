@@ -29,6 +29,7 @@ import { useAtomQueryRunner } from "../../state/use-atom-query-runner";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { downloadMedia, readMediaPng } from "./mediaContent";
+import { saveAttachment } from "../../extensions/file-download";
 
 export interface MediaActionSource {
   readonly kind: "image" | "video";
@@ -93,7 +94,13 @@ export function useMediaActions(source: MediaActionSource) {
     return url;
   };
   const save = async () => {
-    await downloadMedia(await actionUrl(), mediaFileName(source));
+    const url = await actionUrl();
+    if (source.asset?.resource._tag === "media-file" &&
+        source.asset.resource.disposition === "attachment") {
+      await saveAttachment(url, mediaFileName(source), downloadMedia);
+    } else {
+      await downloadMedia(url, mediaFileName(source));
+    }
   };
   const copyImage = async () => {
     assertCanReadMedia();

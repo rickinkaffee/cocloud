@@ -1,1 +1,1 @@
-export function CocloudProxyEntry(): import("react").ReactElement;
+export function CocloudProxyEntry(props?: {connection?: unknown}): import("react").ReactElement;

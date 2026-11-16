@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node build.mjs"
+    "test": "npm run build",
+    "test:downloads": "node tests/direct-attachment.mjs"
   },
   "devDependencies": {
     "esbuild": "0.25.12",

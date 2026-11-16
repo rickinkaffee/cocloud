@@ -24,7 +24,7 @@ function setup() {
   return { activeResources };
 }
 
-it("only activates the favicon resource after removing a custom icon", async () => {
+it("never mounts project icons or resolves favicon resources", async () => {
   const { activeResources } = setup();
   const registry = AtomRegistry.make();
   const project: ProjectFaviconProject = {
@@ -47,10 +47,10 @@ it("only activates the favicon resource after removing a custom icon", async () 
     await screen.rerender(view({ kind: "lucide", name: "leaf", color: "green" }));
     expect(activeResources.size).toBe(0);
     await screen.rerender(view(null));
-    expect(activeResources.size).toBe(1);
+    expect(activeResources.size).toBe(0);
     await screen.rerender(view(project.projectIcon));
     await screen.rerender(view(null));
-    expect(activeResources.size).toBe(1);
+    expect(activeResources.size).toBe(0);
   } finally {
     registry.dispose();
   }
