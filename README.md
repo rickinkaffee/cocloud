@@ -2,6 +2,29 @@
 
 [中文安装与使用指南](README.zh-CN.md)
 
+## cocloud 云端工作台
+
+**Codex 的实力，你的工作方式。**
+
+cocloud 把基于 T3 Code 的编程工作台运行在自己的服务器上，让项目、会话与工作进度留在云端。电脑上继续做，手机上交代任务、查看成果、提出修改，把工作推进到可以验收和交付。
+
+- **强大，也能按你的习惯来。** 在 Codex 的执行能力之外，按需要改造界面、接入工具、扩展工作流；记忆中心、移动端交互和文件下载等扩展，让工作台适应自己的用法。
+- **换台电脑，工作不用重来。** 工作环境与项目集中保存在服务器，完成配对后，用不同电脑访问同一套工作台，接着已有会话继续处理任务。
+- **手机交代，云端把事办好。** 通过移动网页或 Android 客户端发起任务、查看文件和结果、继续提出修改。配好浏览器与自动化工具后，可以让代理执行网页操作、运行测试、整理报告，再在手机上查看和验收。
+- **从需求到成果，支持自己的工具链。** 接入自己的文生图工具后，也可以在手机上提出海报需求，让云端生成图片，在线查看原图，再继续修改与下载交付。
+
+**工作在云端，主动权在手中。**
+
+![cocloud 云端工作台宣传海报：自由定制、跨电脑接续、手机发起任务与查看交付](docs/assets/cocloud-poster.png)
+
+[查看海报原图](docs/assets/cocloud-poster.png) · [安装与使用](README.zh-CN.md#先运行核心工作台)
+
+海报中的余额卡片是定制场景示例，原部署的账户与余额服务未包含在开源版中；文生图需要自行配置工具和服务凭据。图中的金额、速度与案例内容不代表真实账户数据或性能承诺。各扩展的启用步骤见安装指南。
+
+如果这个项目对你有帮助，欢迎点一个 **Star**，也欢迎通过 Issues 和 Pull Requests 分享反馈与改进。
+
+## Overview
+
 Self-hosted coding-agent workbench with a web client, Android WebView client, incremental memory service, shared server browser and project import service.
 
 This source distribution starts from T3 Code v0.1.8 (commit `bf469bb19669671d0df2efda74ed73867a7137c0`) and includes independently maintained extensions. Claude Agent SDK and Cursor SDK integrations are removed from this distribution. Agent executables, commercial model services and provider subscriptions are separate products; no account or subscription is supplied.
