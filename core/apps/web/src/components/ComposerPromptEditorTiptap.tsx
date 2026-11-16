@@ -1634,7 +1634,7 @@ function ComposerPromptEditorTiptapInner(
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- restores ProseMirror focus and caret scroll when the keyed editor remounts, capturing focus on teardown
   useLayoutEffect(() => {
     if (!editor) return;
-    if (restoreFocusRef.current) {
+    if (restoreFocusRef.current && !isMobileComposerViewport()) {
       restoreFocusRef.current = false;
       editor.view.focus();
       scrollTiptapCaretIntoView(editor);
@@ -1647,6 +1647,8 @@ function ComposerPromptEditorTiptapInner(
 
   const focusAt = (nextCursor: number, exactExpandedCursor?: number) => {
     if (!editor) return;
+    if (isMobileComposerViewport() && !editor.view.hasFocus() && !hasRecentComposerFocusIntent())
+      return;
     // view.focus() writes selection immediately; bare DOM focus waits 20ms and can misplace fast dictation.
     editor.view.focus();
     if (snapshotRef.current.value !== latestValueRef.current) return;
@@ -1937,4 +1939,17 @@ function caretLineRect(range: Range, edge: "start" | "end"): DOMRect | null {
   }
   const containerRect = container.getBoundingClientRect();
   return containerRect.height > 0 ? containerRect : null;
+}
+
+function isMobileComposerViewport(): boolean {
+  return (
+    matchMedia("(max-width: 767px), (pointer: coarse)").matches ||
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  );
+}
+function hasRecentComposerFocusIntent(): boolean {
+  const intent = (
+    window as Window & { __t3ComposerFocusIntent?: { path: string; time: number } | null }
+  ).__t3ComposerFocusIntent;
+  return !!intent && intent.path === location.pathname && performance.now() - intent.time < 1200;
 }

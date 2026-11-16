@@ -1,17 +1,32 @@
 type ProjectRef = { environmentId: string; projectId: string };
-type Thread = ProjectRef & { archivedAt: string | null; deletedAt?: string | null };
+type Thread = ProjectRef & { archivedAt: unknown | null; deletedAt?: unknown | null };
 type Group = { archived: boolean; memberProjectRefs: readonly ProjectRef[] };
+type ArchivedSnapshot = {
+  environmentId: string;
+  snapshot: { threads: readonly Omit<Thread, "environmentId">[] };
+};
 
-// Use all thread shells, before search, scope, collapse and shelf filtering.
-// Archived conversations are removed from the live shell snapshot entirely.
-// An empty snapshot must therefore hide folders, including after a reload.
-export function keepEmptyProjectFolders(threads: readonly Thread[]) {
+// Empty is not evidence of archiving: brand-new projects have no threads either.
+// Read archived shells separately because live snapshots omit them after reload.
+export function keepEmptyProjectFolders(
+  threads: readonly Thread[],
+  snapshots: readonly ArchivedSnapshot[] = [],
+) {
   const active = new Set<string>();
+  const archived = new Set<string>();
   const key = (ref: ProjectRef) => JSON.stringify([ref.environmentId, ref.projectId]);
   for (const thread of threads) {
     if (thread.deletedAt != null) continue;
-    if (thread.archivedAt == null) active.add(key(thread));
+    (thread.archivedAt == null ? active : archived).add(key(thread));
   }
-  return (group: Group) => !group.archived &&
-    group.memberProjectRefs.some(ref => active.has(key(ref)));
+  for (const { environmentId, snapshot } of snapshots) {
+    for (const thread of snapshot.threads) {
+      if (thread.deletedAt == null && thread.archivedAt != null)
+        archived.add(key({ environmentId, projectId: thread.projectId }));
+    }
+  }
+  return (group: Group) =>
+    !group.archived &&
+    (group.memberProjectRefs.some((ref) => active.has(key(ref))) ||
+      !group.memberProjectRefs.some((ref) => archived.has(key(ref))));
 }

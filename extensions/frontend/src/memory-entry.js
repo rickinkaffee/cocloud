@@ -1,9 +1,8 @@
 import * as X from "react";
 // Mounted by the workbench's React sidebar footer between Devices and Balances.
 // Uses the host theme/classes and performs no background history requests.
-export function CocloudMemoryEntry() {
+export function CocloudMemoryEntry({language = navigator.language} = {}) {
  const h=X.createElement;
- const language=navigator.language;
  const english=language?.startsWith('en');
  const title=english?'Memory center':'记忆中心';
  const svg=(paths)=>h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.75,strokeLinecap:'round',strokeLinejoin:'round',className:'size-4 shrink-0','aria-hidden':true},...paths.map(d=>h('path',{key:d,d})));

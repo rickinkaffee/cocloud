@@ -1398,6 +1398,28 @@ export function createServerEnvironmentAtoms<R, E>(
           ),
         ),
     }),
+    setSkillEnabled: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:server:set-skill-enabled",
+      tag: WS_METHODS.providerSetSkillEnabled,
+      onSuccess: ({ environmentId, input }, registry, result) =>
+        Effect.sync(() => {
+          const provider = result.providers.find(
+            (candidate) => candidate.instanceId === input.instanceId,
+          );
+          for (const workspace of provider?.workspaceSnapshots ?? []) {
+            registry.update(fetchedWorkspaceSnapshotsAtom(environmentId), (current) =>
+              recordFetchedWorkspaceSnapshot(
+                current,
+                { instanceId: input.instanceId, cwd: workspace.cwd, fresh: true },
+                result.providers,
+                registry
+                  .get(configValueAtom(environmentId))
+                  ?.providers.find((candidate) => candidate.instanceId === input.instanceId),
+              ),
+            );
+          }
+        }),
+    }),
     consumeResetCredit: createEnvironmentRpcCommand(runtime, {
       label: "environment-data:server:consume-reset-credit",
       tag: WS_METHODS.providerConsumeResetCredit,

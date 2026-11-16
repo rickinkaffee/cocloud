@@ -43,6 +43,11 @@ export interface ProviderInstance {
   readonly snapshotForCwd?: (
     cwd: string,
   ) => Effect.Effect<ProviderWorkspaceSnapshot, ProviderDriverError>;
+  readonly setSkillEnabled?: (input: {
+    readonly cwd: string;
+    readonly path: string;
+    readonly enabled: boolean;
+  }) => Effect.Effect<boolean, ProviderDriverError>;
   readonly refreshModels?: () => Effect.Effect<void, ProviderDriverError>;
   readonly invalidateCaches?: Effect.Effect<void>;
   readonly consumeResetCredit?: () => Effect.Effect<

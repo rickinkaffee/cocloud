@@ -443,6 +443,7 @@ export const WS_METHODS = {
   providerUploadFeedback: "provider.uploadFeedback",
   providerAuthStart: "provider.auth.start",
   providerConsumeResetCredit: "provider.consumeResetCredit",
+  providerSetSkillEnabled: "provider.setSkillEnabled",
   providerAuthComplete: "provider.auth.complete",
   chatGptReconnectProfile: "provider.chatgpt.reconnect-profile",
   chatGptImportProfile: "provider.chatgpt.import-profile",
@@ -686,6 +687,17 @@ const WsServerUpdateProviderRpc = Rpc.make(WS_METHODS.serverUpdateProvider, {
 });
 
 const ProviderSetupRpcError = Schema.Union([ProviderSetupError, EnvironmentAuthorizationError]);
+
+const WsProviderSetSkillEnabledRpc = Rpc.make(WS_METHODS.providerSetSkillEnabled, {
+  payload: Schema.Struct({
+    instanceId: ProviderInstanceId,
+    cwd: Schema.optional(TrimmedNonEmptyString),
+    path: TrimmedNonEmptyString,
+    enabled: Schema.Boolean,
+  }),
+  success: Schema.Struct({ ...ServerProviderUpdatedPayload.fields, enabled: Schema.Boolean }),
+  error: ProviderSetupRpcError,
+});
 
 const WsProviderConsumeResetCreditRpc = Rpc.make(WS_METHODS.providerConsumeResetCredit, {
   payload: ProviderConsumeResetCreditInput,
@@ -2069,6 +2081,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerProbeRpc,
   WsServerGetConfigRpc,
   WsServerRefreshProvidersRpc,
+  WsProviderSetSkillEnabledRpc,
   WsServerUpdateProviderRpc,
   WsProviderConsumeResetCreditRpc,
   WsProviderAuthStartRpc,

@@ -14,8 +14,8 @@ public final class DownloadPolicyTest {
         check(!DownloadPolicy.blob("blob:" + origin + "/abc", "https://evil.test/"));
         check(!DownloadPolicy.trusted("https://user:pass@workbench.example:8443/"));
         check(!DownloadPolicy.trusted("http://workbench.example:8443/"));
-        check(DownloadPolicy.trusted(origin + "/"));
-        check(!DownloadPolicy.trusted(origin + ":8443/"));
+        check(DownloadPolicy.trusted(BuildConfig.ORIGIN + "/"));
+        check(!DownloadPolicy.trusted("https://wrong.example/"));
         check(DownloadPolicy.filename("../../report.json\n", "application/json").indexOf('/') == -1);
         check(DownloadPolicy.filename("女孩.png", "image/png").equals("女孩.png"));
         check(DownloadPolicy.filename("", "image/png").endsWith(".png"));

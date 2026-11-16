@@ -1,0 +1,10 @@
+{
+  "Output": "输出",
+  "Uncached input": "未缓存输入",
+  "Cache read": "缓存读取",
+  "Context window usage": "上下文窗口用量",
+  "Context window": "上下文窗口已使用",
+  "Tool calls": "工具调用",
+  "Cache hit": "缓存命中",
+  "{0}s": "{0} 秒"
+}

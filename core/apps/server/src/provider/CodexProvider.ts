@@ -897,3 +897,31 @@ export const checkCodexProviderStatus = Effect.fn("checkCodexProviderStatus")(fu
 });
 
 export { makePendingCodexProvider };
+
+export class CodexSkillNotDiscoveredError extends Schema.TaggedError<CodexSkillNotDiscoveredError>()(
+  "CodexSkillNotDiscoveredError",
+  { path: Schema.String },
+) {}
+
+/** Only previously discovered skills may be changed; caller-selected arbitrary paths are rejected. */
+export const setCodexSkillEnabled = Effect.fn("setCodexSkillEnabled")(function* (input: {
+  readonly binaryPath: string;
+  readonly homePath?: string;
+  readonly launchArgs?: string;
+  readonly cwd: string;
+  readonly environment?: NodeJS.ProcessEnv;
+  readonly path: string;
+  readonly enabled: boolean;
+}) {
+  const { client } = yield* withCodexAppServerClient(input);
+  const response = yield* client.request("skills/list", { cwds: [input.cwd] });
+  const skills = parseCodexSkillsListResponse(response, input.cwd);
+  if (!skills.some((skill) => skill.path === input.path)) {
+    return yield* new CodexSkillNotDiscoveredError({ path: input.path });
+  }
+  const result = yield* client.request("skills/config/write", {
+    path: input.path,
+    enabled: input.enabled,
+  });
+  return result.effectiveEnabled;
+});

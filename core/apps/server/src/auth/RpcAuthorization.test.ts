@@ -74,6 +74,12 @@ describe("RPC authorization scopes", () => {
     }
   });
 
+  it("requires provider management permission for skill configuration", () => {
+    expect(requiredScopeForRpcMethod(WS_METHODS.providerSetSkillEnabled)).toBe(
+      AuthProvidersManageScope,
+    );
+  });
+
   it("rejects unknown RPC method names", () => {
     for (const method of ["server.notRegistered", "toString", "constructor"]) {
       expect(() => requiredScopeForRpcMethod(method)).toThrow(

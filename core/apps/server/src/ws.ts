@@ -2629,6 +2629,35 @@ export const layerWsRpc = (
           ),
         [WS_METHODS.serverUpdateProvider]: (input) =>
           providerMaintenanceRunner.updateProvider(input),
+        [WS_METHODS.providerSetSkillEnabled]: Effect.fnUntraced(function* (input) {
+          const instance = yield* providerInstances.getInstance(input.instanceId);
+          if (!instance?.enabled || !instance.setSkillEnabled)
+            return yield* new ProviderSetupError({
+              instanceId: input.instanceId,
+              operation: "set-skill-enabled",
+              detail: "This provider does not support changing skill configuration.",
+            });
+          const cwd = input.cwd ?? config.cwd;
+          const enabled = yield* instance
+            .setSkillEnabled({ ...input, cwd })
+            .pipe(
+              Effect.mapError(
+                (cause) =>
+                  new ProviderSetupError({
+                    instanceId: input.instanceId,
+                    operation: "set-skill-enabled",
+                    detail: "Could not update skill configuration. Refresh and try again.",
+                    cause,
+                  }),
+              ),
+            );
+          const providers = yield* providerRegistry.refreshWorkspaceSnapshot({
+            instanceId: input.instanceId,
+            cwd,
+            fresh: true,
+          });
+          return { providers, enabled };
+        }),
         [WS_METHODS.providerConsumeResetCredit]:
           /* Request instrumentation already owns the span; keep this helper in that context. */
           Effect.fnUntraced(function* (input) {

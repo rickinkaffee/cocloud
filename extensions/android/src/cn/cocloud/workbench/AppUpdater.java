@@ -114,7 +114,8 @@ final class AppUpdater {
                 if (ready.exists() && !ready.delete()) throw new Exception("old update locked");
                 if (!temporary.renameTo(ready)) throw new Exception("update rename failed");
                 activity.getPreferences(0).edit().putLong("pendingUpdateVersion", release.getLong("versionCode")).apply();
-                ui(this::install);
+                long targetVersion = release.getLong("versionCode");
+                ui(() -> install(targetVersion));
             } catch (Exception ex) { ui(() -> toast(cancelled ? "更新下载已取消" : "更新下载或校验失败，请重试")); }
             finally { temporary.delete(); busy.set(false); ui(() -> { if (progress != null) progress.dismiss(); }); }
         });
@@ -129,10 +130,10 @@ final class AppUpdater {
                 || !Arrays.equals(candidate.signingInfo.getApkContentsSigners(), installed.signingInfo.getApkContentsSigners()))
             throw new SecurityException("update identity mismatch");
     }
-    private void install() {
+    private void install(long targetVersion) {
         try {
             File apk = new File(activity.getFilesDir(), "updates/update.apk");
-            verifyApk(apk, activity.getPreferences(0).getLong("pendingUpdateVersion", 0));
+            verifyApk(apk, targetVersion);
             if (!activity.getPackageManager().canRequestPackageInstalls()) {
                 new AlertDialog.Builder(activity).setTitle("允许安装更新")
                         .setMessage("请在接下来的系统页面允许 Cocloud 安装应用。返回后会打开更新安装界面。")
@@ -145,10 +146,10 @@ final class AppUpdater {
                 return;
             }
             toast("正在准备系统安装程序…");
-            worker.submit(() -> stageInstall(apk));
+            worker.submit(() -> stageInstall(apk, targetVersion));
         } catch (Exception ex) { toast("无法打开更新安装程序，请重新检查更新"); }
     }
-    private void stageInstall(File apk) {
+    private void stageInstall(File apk, long targetVersion) {
         PackageInstaller installer = activity.getPackageManager().getPackageInstaller();
         int sessionId = -1;
         try {
@@ -169,6 +170,7 @@ final class AppUpdater {
                 int flags = PendingIntent.FLAG_UPDATE_CURRENT;
                 if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE;
                 PendingIntent callback = PendingIntent.getBroadcast(activity, sessionId, result, flags);
+                UpdateInstallState.begin(activity, sessionId, targetVersion);
                 session.commit(callback.getIntentSender());
             }
         } catch (Exception ex) {
@@ -179,17 +181,17 @@ final class AppUpdater {
         }
     }
     void showInstallResult() {
-        android.content.SharedPreferences prefs = activity.getSharedPreferences("update-install", 0);
-        String failure = prefs.getString("failure", null);
+        String failure = UpdateInstallState.consumeFailure(activity,
+                activity.getPreferences(0).getLong("pendingUpdateVersion", 0));
         if (failure == null) return;
-        prefs.edit().remove("failure").apply();
         new AlertDialog.Builder(activity).setTitle("更新未完成").setMessage(failure)
                 .setPositiveButton("确定", null).show();
     }
     void resumeInstall() {
         if (!waitingForPermission) return;
         waitingForPermission = false;
-        if (activity.getPackageManager().canRequestPackageInstalls()) install();
+        if (activity.getPackageManager().canRequestPackageInstalls())
+            install(activity.getPreferences(0).getLong("pendingUpdateVersion", 0));
     }
     void close() { cancelled = true; worker.shutdownNow(); if (progress != null) progress.dismiss(); }
 }

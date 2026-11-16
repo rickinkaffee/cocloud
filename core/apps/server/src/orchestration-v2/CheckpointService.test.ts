@@ -48,12 +48,17 @@ it.effect(
           detail: "The workspace directory is ignored by its Git repository.",
         }),
       ]) {
+        let baselineInitializationRequested = false;
         const layerTest = CheckpointService.layer.pipe(
           Layer.provide(
             Layer.mergeAll(
               IdAllocator.layer,
               Layer.mock(CheckpointStore.CheckpointStore)({
-                isGitRepository: () => Effect.succeed(true),
+                isGitRepository: (_cwd, options) =>
+                  Effect.sync(() => {
+                    if (options?.initializeIfMissing) baselineInitializationRequested = true;
+                    return true;
+                  }),
                 hasCheckpointRef: () => Effect.succeed(false),
                 captureCheckpoint: () => Effect.fail(captureError),
               }),
@@ -66,6 +71,7 @@ it.effect(
           const baseline = yield* Effect.result(
             checkpoints.captureBaseline({ scope, ordinalWithinScope: 0 }),
           );
+          assert.strictEqual(baselineInitializationRequested, true);
           const checkpoint = yield* checkpoints.capture({
             scope,
             ordinalWithinScope: 1,

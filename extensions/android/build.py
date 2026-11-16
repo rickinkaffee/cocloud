@@ -64,6 +64,7 @@ test_classes.mkdir(exist_ok=True)
 run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
     source / 'src/cn/cocloud/workbench/UpdatePolicy.java', source / 'tests/UpdatePolicyTest.java')
 run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.UpdatePolicyTest')
+run(sys.executable, source / 'tests/update_install_test.py', java)
 run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
     source / 'src/cn/cocloud/workbench/TaskCompletionGate.java', source / 'tests/TaskCompletionGateTest.java')
 run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.TaskCompletionGateTest')
@@ -74,7 +75,10 @@ run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
 run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.SidebarBackGestureTest')
 run('node', source / 'tests/sidebar-back-integration.test.mjs', java / 'bin/java', test_classes)
 
-# Download regression is a required build gate, not an optional release check.
+# Camera capture and download regressions are required build gates.
+run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
+    source / 'src/cn/cocloud/workbench/CameraPolicy.java', source / 'tests/CameraPolicyTest.java')
+run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.CameraPolicyTest')
 run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
     config, source / 'src/cn/cocloud/workbench/DownloadPolicy.java', source / 'tests/DownloadPolicyTest.java')
 run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.DownloadPolicyTest')
@@ -121,15 +125,17 @@ with zipfile.ZipFile(apk) as archive:
     assert archive.testzip() is None, 'Invalid APK ZIP entry'
     assert archive.read('assets/blob-download.js') == (source / 'assets/blob-download.js').read_bytes(), 'Blob transport missing or stale in APK'
     assert b'Lcn/cocloud/workbench/SidebarBackGesture;' in archive.read('classes.dex'), 'Predictive-back implementation missing from APK'
+    assert b'Lcn/cocloud/workbench/CameraProvider;' in archive.read('classes.dex'), 'Camera provider missing'
+    assert b'Lcn/cocloud/workbench/UpdateInstallState;' in archive.read('classes.dex'), 'Update reconciliation missing'
     assert archive.getinfo('resources.arsc').compress_type == zipfile.ZIP_STORED
 run(tools / 'aapt2', 'dump', 'badging', apk)
 metadata = {'schema': 1, 'packageName': manifest.attrib['package'], 'version': version, 'versionCode': version_code,
             'filename': apk.name, 'bytes': apk.stat().st_size,
             'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(), 'minAndroid': '10',
             'origin': origin + '/',
-            'capabilities': ['native-blob-download-v1', 'sidebar-predictive-back-v1'],
+            'capabilities': ['native-blob-download-v1', 'sidebar-predictive-back-v1', 'native-camera-capture-v1'],
             'blobTransportSha256': hashlib.sha256((source / 'assets/blob-download.js').read_bytes()).hexdigest(),
-            'notes': '配合网页 Ionic 手势框架改善左右滑动；Android 14 及以上接入两侧系统边缘跟手进度和取消回弹，两侧中段保留网页手势区域；保留原生下载和登录数据。'}
+            'notes': '同步拍照上传与更新结果核对，保留原生下载、登录和侧栏手势。'}
 signing_key = private / 'manifest-signing.pem'
 if not signing_key.exists():
     key_bytes = subprocess.check_output(['openssl', 'pkcs12', '-in', str(key), '-passin', 'file:' + str(password), '-nocerts', '-nodes'])

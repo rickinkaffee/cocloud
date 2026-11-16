@@ -6,7 +6,7 @@ import type {
   SnapShotSource,
 } from "@t3tools/contracts";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
-import { CircleAlertIcon, PaperclipIcon, PlayIcon, XIcon } from "lucide-react";
+import { CameraIcon, CircleAlertIcon, PaperclipIcon, PlayIcon, XIcon } from "lucide-react";
 import { type ComponentProps, useLayoutEffect, useRef } from "react";
 
 import {
@@ -676,6 +676,7 @@ export function ComposerAttachButton({
   readonly focusComposer: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   return (
     <>
       <input
@@ -686,6 +687,7 @@ export function ComposerAttachButton({
         onChange={(event) => {
           const files = Array.from(event.currentTarget.files ?? []);
           event.currentTarget.value = "";
+          if (files.length === 0) return;
           // Inserting a chip refocuses the editor after the draft renders;
           // focusing synchronously here would report the editor's stale text
           // over the prompt that was just written.
@@ -694,6 +696,33 @@ export function ComposerAttachButton({
           });
         }}
       />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        aria-label="拍照"
+        onChange={(event) => {
+          const files = Array.from(event.currentTarget.files ?? []);
+          event.currentTarget.value = "";
+          if (files.length === 0) return;
+          void addComposerAttachments(files).then((inserted) => {
+            if (!inserted) focusComposer();
+          });
+        }}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        title="拍照"
+        aria-label="拍照"
+        onPointerDown={(event) => event.preventDefault()}
+        onClick={() => cameraRef.current?.click()}
+      >
+        <CameraIcon />
+      </Button>
       <Tooltip>
         <TooltipTrigger
           render={

@@ -1,3 +1,4 @@
+import { useSharedBrowserPanel } from "./chat/SharedBrowserPanel";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import {
@@ -1022,7 +1023,8 @@ function RightPanelTab(
   );
 }
 
-export function RightPanelTabs(props: RightPanelTabsProps) {
+export function RightPanelTabs(input: RightPanelTabsProps) {
+  const props = useSharedBrowserPanel(input);
   const focusedSurface = props.surfaces.find((surface) => surface.id === props.activeSurfaceId);
   const ownsDesktopTitleBar = isElectron && props.mode === "inline";
   const browserProfiles = useBrowserDefaults().profiles;

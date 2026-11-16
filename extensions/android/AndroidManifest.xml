@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cn.cocloud.workbench" android:versionCode="7" android:versionName="1.0.6">
+    package="cn.cocloud.workbench" android:versionCode="9" android:versionName="1.0.8">
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -22,6 +22,8 @@
             </intent-filter>
         </activity>
         <provider android:name=".UpdateProvider" android:authorities="cn.cocloud.workbench.updates"
+            android:exported="false" android:grantUriPermissions="true" />
+        <provider android:name=".CameraProvider" android:authorities="cn.cocloud.workbench.camera"
             android:exported="false" android:grantUriPermissions="true" />
         <receiver android:name=".UpdateInstallReceiver" android:exported="false" />
         <service android:name=".TaskNotificationService" android:exported="false"

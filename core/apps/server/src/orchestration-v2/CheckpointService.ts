@@ -254,7 +254,11 @@ export const layer: Layer.Layer<
       withWorkspaceLock(
         input.scope.cwd,
         Effect.gen(function* () {
-          if (!(yield* isGitCheckpointable(input.scope.cwd))) {
+          if (
+            !(yield* checkpointStore.isGitRepository(input.scope.cwd, {
+              initializeIfMissing: true,
+            }))
+          ) {
             return;
           }
 

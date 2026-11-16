@@ -10,6 +10,14 @@ import android.widget.Toast;
 public final class UpdateInstallReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent result) {
         if (!(context.getPackageName() + ".UPDATE_INSTALL_STATUS").equals(result.getAction())) return;
+        int sessionId;
+        try {
+            if (result.getData() == null || !"cocloud-install".equals(result.getData().getScheme())) return;
+            sessionId = Integer.parseInt(result.getData().getSchemeSpecificPart());
+        } catch (RuntimeException ex) { return; }
+        // Delayed results from abandoned/retried sessions cannot overwrite the current attempt.
+        if (!UpdateInstallState.accepts(context, sessionId)) return;
+        if (UpdateInstallState.reconcile(context, 0)) return;
         int status = result.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
             Intent confirmation = result.getParcelableExtra(Intent.EXTRA_INTENT);
@@ -21,7 +29,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
                 failure(context, "系统安装确认页面未能打开，请返回工作台重试，或使用浏览器下载 APK 覆盖安装。");
             }
         } else if (status == PackageInstaller.STATUS_SUCCESS) {
-            context.getSharedPreferences("update-install", 0).edit().remove("failure").apply();
+            UpdateInstallState.clear(context);
         } else {
             String message = result.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
             if (message == null) message = "系统未提供详细原因";
@@ -31,7 +39,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
         }
     }
     private static void failure(Context context, String message) {
-        context.getSharedPreferences("update-install", 0).edit().putString("failure", message).apply();
+        UpdateInstallState.fail(context, message);
         Toast.makeText(context, "更新未完成，返回工作台查看安装原因", Toast.LENGTH_LONG).show();
     }
 }

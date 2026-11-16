@@ -1,3 +1,4 @@
+import { useArchivedThreadSnapshots } from "../lib/archivedThreadsState";
 import { WorkbenchExtensions } from "./WorkbenchExtensions";
 import { keepEmptyProjectFolders } from "../lib/projectFolderVisibility";
 import { attachSidebarTree } from "../lib/sidebarTree";
@@ -1028,6 +1029,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
   const [threadSearchQuery, setThreadSearchQuery] = useState("");
   const [searchHighlightKey, setSearchHighlightKey] = useState<string | null>(null);
   const connectedEnvironmentIds = useConnectedEnvironmentIds();
+  const archivedFolderSnapshots = useArchivedThreadSnapshots(connectedEnvironmentIds).snapshots;
   const queuePendingFileDrop = useSidebarPendingFileDropStore((s) => s.queuePendingFileDrop);
   const clearPendingFileDrop = useSidebarPendingFileDropStore((s) => s.clearPendingFileDrop);
   const [renamingThreadRef, setRenamingThreadRef] = useState<ScopedThreadRef | null>(null);
@@ -1346,7 +1348,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
           [...scopeGroups, ...projectGroups.filter((project) => project.archived)]
         : scopedProjectGroups
       : null,
-    keepEmptyFolders: keepEmptyProjectFolders(threads),
+    keepEmptyFolders: keepEmptyProjectFolders(threads, archivedFolderSnapshots),
   });
 
   // Ranked across environments as the palette ranks them, so one

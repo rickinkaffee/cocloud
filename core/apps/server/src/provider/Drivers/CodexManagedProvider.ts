@@ -20,6 +20,7 @@ import {
   checkCodexProviderStatus,
   makePendingCodexProvider,
   probeCodexSkillsForCwd,
+  setCodexSkillEnabled,
 } from "../CodexProvider.ts";
 import { makeManagedServerProvider } from "@t3tools/provider-core/server/managedProvider";
 import { mergeProviderInstanceEnvironment } from "@t3tools/provider-core/server/instanceEnvironment";
@@ -301,6 +302,30 @@ export const makeManagedCodexProvider = Effect.fn("makeManagedCodexProvider")(fu
     orchestrationAdapter,
     textGeneration,
     auth: runtime.auth.controller,
+    setSkillEnabled: (input) =>
+      resolveRuntime.pipe(
+        Effect.flatMap((effective) =>
+          setCodexSkillEnabled({
+            binaryPath: effective.config.binaryPath,
+            homePath: effective.config.homePath,
+            launchArgs: effective.config.launchArgs,
+            environment: effective.environment,
+            ...input,
+          }),
+        ),
+        Effect.scoped,
+        Effect.timeout("20 seconds"),
+        Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+        Effect.mapError(
+          (cause) =>
+            new ProviderDriverError({
+              driver: DRIVER,
+              instanceId,
+              detail: "Could not update skill configuration.",
+              cause,
+            }),
+        ),
+      ),
     snapshotForCwd: (cwd: string) =>
       enabled
         ? resolveRuntime.pipe(

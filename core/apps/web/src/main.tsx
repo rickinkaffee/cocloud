@@ -1,3 +1,5 @@
+import "./extensions/mobile-focus-intent.js";
+import "./extensions/mobile-focus-guard.js";
 import React from "react";
 import ReactDOM from "react-dom/client";
 

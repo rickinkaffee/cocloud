@@ -120,6 +120,21 @@ it.layer(layerTest)("CheckpointStore.layer", (it) => {
       expect(yield* checkpointStore.isGitRepository(nested)).toBe(true);
     }),
   );
+  it.effect("initializes an unversioned workspace only when baseline capture requests it", () =>
+    Effect.gen(function* () {
+      const tmp = yield* makeTmpDir();
+      const store = yield* CheckpointStore.CheckpointStore;
+      expect(yield* store.isGitRepository(tmp)).toBe(false);
+      const fs = yield* FileSystem.FileSystem;
+      expect(yield* fs.exists(NodePath.join(tmp, ".git"))).toBe(false);
+      yield* writeTextFile(NodePath.join(tmp, "draft.txt"), "synthetic draft");
+      expect(yield* store.isGitRepository(tmp, { initializeIfMissing: true })).toBe(true);
+      const ref = CheckpointRef.make("refs/t3/checkpoints/synthetic/turn/0");
+      yield* store.captureCheckpoint({ cwd: tmp, checkpointRef: ref });
+      expect(yield* store.hasCheckpointRef({ cwd: tmp, checkpointRef: ref })).toBe(true);
+      expect(yield* fs.readFileString(NodePath.join(tmp, "draft.txt"))).toBe("synthetic draft");
+    }),
+  );
   describe("diffCheckpoints", () => {
     it.effect("returns full oversized checkpoint diffs without truncation", () =>
       Effect.gen(function* () {

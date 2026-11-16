@@ -42,6 +42,8 @@ import android.widget.Toast;
 public final class MainActivity extends Activity {
     private static final String HOME = BuildConfig.ORIGIN + "/";
     private static final int CHOOSE_FILES = 100;
+    private static final int TAKE_PHOTO = 102;
+    private Uri cameraUri;
     private static final int NOTIFICATION_PERMISSION = 101;
     private WebView web;
     private BlobDownloads blobDownloads;
@@ -61,11 +63,13 @@ public final class MainActivity extends Activity {
     private long lastTouchAt;
 
     private static boolean trusted(Uri uri) {
-        return uri != null && DownloadPolicy.trusted(uri.toString());
+        return "https".equals(uri.getScheme()) && "workbench.example".equals(uri.getHost())
+                && uri.getPort() == 8443 && uri.getUserInfo() == null;
     }
 
     @Override public void onCreate(Bundle savedState) {
         super.onCreate(savedState);
+        CameraProvider.prune(this);
         WebView.setWebContentsDebuggingEnabled(false);
         layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -161,7 +165,26 @@ public final class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
+                clearCamera(true);
                 fileCallback = callback;
+                if (CameraPolicy.shouldCapture(params.isCaptureEnabled(), params.getAcceptTypes())) {
+                    if (!trusted(Uri.parse(view.getUrl() == null ? "" : view.getUrl()))) {
+                        fileCallback.onReceiveValue(null); fileCallback = null; return true;
+                    }
+                    try {
+                        cameraUri = CameraProvider.create(MainActivity.this);
+                        Intent capture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                        capture.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraUri);
+                        capture.setClipData(android.content.ClipData.newRawUri("photo", cameraUri));
+                        capture.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        startActivityForResult(capture, TAKE_PHOTO);
+                    } catch (Exception ex) {
+                        clearCamera(true);
+                        fileCallback.onReceiveValue(null); fileCallback = null;
+                        toast("无法打开相机，请检查系统相机是否可用");
+                    }
+                    return true;
+                }
                 try {
                     Intent pick = params.createIntent();
                     pick.addCategory(Intent.CATEGORY_OPENABLE);
@@ -268,8 +291,23 @@ public final class MainActivity extends Activity {
         layout.addView(errorPanel, new LinearLayout.LayoutParams(-1, -1));
     }
 
+    private void clearCamera(boolean delete) {
+        if (cameraUri == null) return;
+        revokeUriPermission(cameraUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if (delete) CameraProvider.remove(this, cameraUri);
+        cameraUri = null;
+    }
+
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == TAKE_PHOTO) {
+            Uri photo = cameraUri;
+            boolean success = result == RESULT_OK && photo != null && CameraProvider.hasPhoto(this, photo);
+            clearCamera(!success);
+            ValueCallback<Uri[]> callback = fileCallback; fileCallback = null;
+            if (callback != null) callback.onReceiveValue(success ? new Uri[]{photo} : null);
+            return;
+        }
         if (request == CHOOSE_FILES && fileCallback != null) {
             fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result, data));
             fileCallback = null;
@@ -371,6 +409,8 @@ public final class MainActivity extends Activity {
         if (web != null && Build.VERSION.SDK_INT >= 35) web.setRequestedFrameRate(best.getRefreshRate());
     }
     @Override protected void onDestroy() {
+        clearCamera(true);
+        if (fileCallback != null) { fileCallback.onReceiveValue(null); fileCallback = null; }
         if (Build.VERSION.SDK_INT >= 33 && backCallback != null)
             getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);
         if (updater != null) updater.close();

@@ -1,5 +1,7 @@
 # cocloud
 
+最新通用功能更新与部署差异见 [同步说明](docs/SYNC-NOTES.zh-CN.md)。
+
 基于 T3 Code 的自托管编程工作台集成与扩展项目，包含网页工作台、Android 客户端、记忆服务、共享浏览器和项目导入服务。
 
 ## 鸣谢 T3 Code

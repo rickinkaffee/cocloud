@@ -134,7 +134,11 @@ const browserTestProject = {
     browser: {
       enabled: true,
       headless: true,
-      provider: playwright(),
+      provider: playwright({
+        launchOptions: process.env.CHROMIUM_PATH
+          ? { executablePath: process.env.CHROMIUM_PATH }
+          : {},
+      }),
       instances: [{ browser: "chromium" }],
       screenshotFailures: false,
       commands: {
@@ -324,10 +328,9 @@ export default defineConfig(() => {
     resolve: {
       tsconfigPaths: true,
       alias: {
-        "@betteroffice/fonts-cjk": fileURLToPath(new URL(
-          "./src/components/files/office/fonts-cjk.ts",
-          import.meta.url,
-        )),
+        "@betteroffice/fonts-cjk": fileURLToPath(
+          new URL("./src/components/files/office/fonts-cjk.ts", import.meta.url),
+        ),
       },
       dedupe: ["react", "react-dom"],
     },
