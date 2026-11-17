@@ -23,7 +23,7 @@ export function CocloudProxyEntry({connection=null}={}) {
       onClick:()=>{const enabled=!state.enabled;setReport(null);run(async()=>setState(await request('',{enabled})))},
       style:{backgroundColor:state.enabled?'var(--primary)':'var(--input)'}},
       h('span',{'aria-hidden':true,className:'cocloud-proxy-switch-thumb',style:{transform:state.enabled?'translateX(16px)':'translateX(0)'}}))),
-    h('p',{role:'status'},state.enabled?'运行中':'未运行',state.startup?' · 开机自动启用':' · 开机不启用'),
+    h('p',{role:'status'},state.temporary?'GitHub 临时使用中，结束后自动恢复':state.enabled?'运行中':'未运行',state.startup?' · 开机自动启用':' · 开机不启用'),
     !state.canControl?h('p',null,'当前会话只有查看权限'):null):null,
    h('div',{className:'flex flex-wrap gap-2'},
     h('button',{type:'button',className:button,disabled:busy||!state?.enabled||!state?.canControl,onClick:()=>run(async()=>setReport(await request('/test',{})))},'连接测速')),

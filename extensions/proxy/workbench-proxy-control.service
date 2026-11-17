@@ -6,6 +6,12 @@ Type=simple
 User=root
 EnvironmentFile=/etc/open-workbench/proxy.env
 ExecStart=/usr/bin/node /opt/open-workbench/extensions/proxy/server.mjs
+ExecStopPost=/usr/bin/node /opt/open-workbench/extensions/proxy/server.mjs --recover
+StateDirectory=open-workbench-proxy
+RuntimeDirectory=open-workbench-proxy
+Environment=HOME=/var/lib/open-workbench
+Environment=GH_CONFIG_DIR=/var/lib/open-workbench/.config/gh
+ReadWritePaths=/var/lib/open-workbench/.config/gh
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true

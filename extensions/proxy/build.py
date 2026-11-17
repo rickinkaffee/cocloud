@@ -4,10 +4,10 @@ import hashlib, json, shutil, subprocess, sys
 root=Path(__file__).resolve().parent
 out=Path(sys.argv[1]).resolve()
 assert out!=root and root not in out.parents, 'Output must be outside source'
-subprocess.run(['node','--test',str(root/'server.test.mjs')],check=True)
+subprocess.run(['node','--test',str(root/'server.test.mjs'),str(root/'temporary-proxy.test.mjs'),str(root/'github.test.mjs')],check=True)
 subprocess.run(['node',str(root/'../frontend/tests/proxy-entry.mjs')],check=True)
 out.mkdir(parents=True,exist_ok=False)
-files=['server.mjs','server.test.mjs','build.py','README.md','workbench-proxy-control.service']
+files=['server.mjs','server.test.mjs','build.py','README.md','workbench-proxy-control.service','temporary-proxy.mjs','temporary-proxy.test.mjs','github.mjs','github.test.mjs','github-local.mjs','github-run.mjs']
 (out/'proxy').mkdir()
 for name in files: shutil.copy2(root/name,out/'proxy'/name)
 # Preserve the relative shared-auth import in the installed extensions layout.

@@ -42,3 +42,43 @@ The bridge needs permission to manage **only that configured unit**; the example
 root service is for an administrator-controlled single-host deployment. Keep its
 API loopback-only behind workbench authentication. Do not grant systemd control
 to an untrusted user. Use your own service policy for a multi-user installation.
+
+
+## GitHub login and temporary connectivity
+
+The connection center shows whether `gh` is installed, whether a local login is
+configured, and the result/time/account of the last explicit connection check.
+A configured credential alone does not imply a working connection. Polling reads
+local credentials without contacting GitHub or starting the proxy. Device login
+opens GitHub's own authorization page; no access token is entered into the UI.
+The code is visible only to a session with diagnostics, settings-write and
+maintenance scopes. Login and checks require the configured origin and custom
+request header. Credentials stay in the server user's private `gh` configuration.
+Install `gh`, create its configuration directory with mode 0700, and set
+`GH_CONFIG_DIR` consistently for the bridge, workbench server and command-line user.
+The supplied unit requires `/var/lib/open-workbench/.config/gh` to exist before start.
+
+Login, connection checks and managed GitHub commands start the configured proxy
+with `systemctl start` only when it was inactive. They restore that runtime state
+after success, failure, cancellation or timeout. An already running proxy stays
+running; startup/enable state is never changed by temporary operations. Concurrent
+operations and manual proxy changes are refused while one is running. A private
+ownership journal and the unit's `ExecStopPost --recover` restore an owned proxy
+if the bridge crashes or is killed. Keep `PROXY_STATE_DIR` persistent and use the
+provided unit's recovery hook when adapting installation paths.
+
+Use the owner-only local runner for GitHub operations that need this lifecycle:
+
+```sh
+node extensions/proxy/github-run.mjs git push origin main
+node extensions/proxy/github-run.mjs gh pr list
+```
+
+The bridge's Unix socket is owner-only; no public command-execution route exists.
+Commands use the same private `gh` configuration and a transient GitHub credential
+helper, receive proxy variables only in their child process, stream output, and
+have a 15-minute deadline. Disconnecting the runner cancels the child and restores
+the proxy. Ordinary commands outside this runner keep their existing behavior.
+No global proxy, Git configuration or boot-time service setting is modified.
+Tests use mock credentials/services and cover process deadlines, interrupted
+cleanup, cancellation, concurrency, exact output and API permissions.

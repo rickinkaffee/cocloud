@@ -142,3 +142,9 @@ client status with an [optional WeChat gateway](extensions/wechat/README.md).
 Supply your own compatible API, noVNC desktop and credentials for WeChat; accounts
 and runtime data are not distributed. See [sync notes](docs/SYNC-NOTES.zh-CN.md)
 and [attachment download details](docs/DOWNLOADS.md).
+
+
+The connection center also offers GitHub device sign-in and distinguishes local
+credentials from verified connectivity. The bridge temporarily starts the proxy
+for sign-in, checks and [managed Git/gh commands](extensions/proxy/README.md#github-login-and-temporary-connectivity),
+then restores its prior runtime state without changing startup settings.

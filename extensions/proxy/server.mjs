@@ -3,6 +3,11 @@ import {authenticateWorkbench as authenticate} from '../project-import/workbench
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {pathToFileURL} from 'node:url';
+import {join} from 'node:path';
+import {createTemporaryProxy} from './temporary-proxy.mjs';
+import {createGitHub} from './github.mjs';
+import {createLocalRunner} from './github-local.mjs';
+import {socketPath} from './github-run.mjs';
 const exec = promisify(execFile);
 const UNIT = process.env.PROXY_SERVICE || 'workbench-outbound-proxy.service';
 if (!/^[a-zA-Z0-9][a-zA-Z0-9_.@-]*\.service$/.test(UNIT)) throw Error('Invalid PROXY_SERVICE');
@@ -47,14 +52,15 @@ export async function speedTest(runProbe=probe) {
   return {checkedAt:Date.now(),results};
 }
 export function createServer({auth=authenticate,read=status,toggle=setEnabled,test=speedTest,
-  origin=process.env.WORKBENCH_ORIGIN}={}) {
+  origin=process.env.WORKBENCH_ORIGIN,github=null,proxy=null}={}) {
   if (!origin || new URL(origin).origin !== origin || new URL(origin).protocol !== 'https:') throw Error('WORKBENCH_ORIGIN must be a canonical HTTPS origin');
   let busy=false, lastTest=0, cached;
   return http.createServer(async(req,res)=>{
     const reply=(code,value)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value));};
     try {
       const path=new URL(req.url,'http://localhost').pathname;
-      if(path!=='/api/cocloud/proxy'&&path!=='/api/cocloud/proxy/test')return reply(404,{error:'接口不存在'});
+      const githubRoute=path.match(/^\/api\/cocloud\/proxy\/github(?:\/(check|login|cancel))?$/);
+      if(!githubRoute&&path!=='/api/cocloud/proxy'&&path!=='/api/cocloud/proxy/test')return reply(404,{error:'接口不存在'});
       if(req.headers['sec-fetch-site']==='cross-site')return reply(403,{error:'来源不允许'});
       if(req.headers.origin && req.headers.origin!==origin)return reply(403,{error:'来源不允许'});
       const session=await auth(req.headers);
@@ -62,11 +68,21 @@ export function createServer({auth=authenticate,read=status,toggle=setEnabled,te
       if(!session.authenticated)return reply(401,{error:'请先登录工作台'});
       const scopes=session.permissions??session.scopes??[];
       if(!scopes.includes('diagnostics:read'))return reply(403,{error:'缺少诊断读取权限'});
-      if(req.method==='GET'&&path==='/api/cocloud/proxy')return reply(200,{...await read(),canControl:scopes.includes('settings:write')});
+      const canGitHub=scopes.includes('settings:write')&&scopes.includes('environment:maintain');
+      if(githubRoute){
+       if(!github)return reply(503,{error:'GitHub 服务未配置'});
+       if(req.method==='GET'&&!githubRoute[1])return reply(200,await github.status(canGitHub));
+       if(req.method!=='POST'||!githubRoute[1])return reply(405,{error:'请求方法不允许'});
+       if(req.headers.origin!==origin||req.headers['x-cocloud-proxy']!=='1'||!canGitHub)return reply(403,{error:'需要维护及设置权限，并从当前工作台操作'});
+       if(req.headers['content-length']&&Number(req.headers['content-length'])>1024)return reply(413,{error:'请求过大'});
+       let size=0;for await(const chunk of req){size+=chunk.length;if(size>1024)return reply(413,{error:'请求过大'});}
+       return reply(200,await github[githubRoute[1]]());
+      }
+      if(req.method==='GET'&&path==='/api/cocloud/proxy')return reply(200,{...await read(),temporary:proxy?.temporary??false,canControl:scopes.includes('settings:write')&&!proxy?.busy});
       if(req.method!=='POST')return reply(405,{error:'请求方法不允许'});
       if(req.headers['x-cocloud-proxy']!=='1')return reply(403,{error:'缺少请求标识'});
       if(!scopes.includes('settings:write'))return reply(403,{error:'缺少设置修改权限'});
-      if(busy)return reply(409,{error:'代理正在操作或测速，请稍后再试'});
+      if(busy||proxy?.busy)return reply(409,{error:'代理正在操作或测速，请稍后再试'});
       let body='',tooLarge=false;
       for await(const chunk of req){body+=chunk;if(body.length>1024){tooLarge=true;break;}}
       if(tooLarge)return reply(413,{error:'请求过大'});
@@ -74,15 +90,22 @@ export function createServer({auth=authenticate,read=status,toggle=setEnabled,te
       if(path==='/api/cocloud/proxy'&&typeof value.enabled!=='boolean')return reply(400,{error:'启用状态必须是布尔值'});
       busy=true;
       try {
-        if(path==='/api/cocloud/proxy')return reply(200,{...await toggle(value.enabled),canControl:true});
+        if(path==='/api/cocloud/proxy')return reply(200,{...await (proxy?proxy.exclusive(()=>toggle(value.enabled)):toggle(value.enabled)),canControl:true});
         if(!(await read()).enabled)return reply(409,{error:'请先启用服务器代理'});
         if(cached&&Date.now()-lastTest<15000)return reply(200,cached);
-        cached=await test();lastTest=Date.now();return reply(200,cached);
+        cached=await (proxy?proxy.exclusive(()=>test()):test());lastTest=Date.now();return reply(200,cached);
       }finally{busy=false}
-    }catch{return reply(503,{error:'代理服务操作失败，请稍后重试'})}
+    }catch(error){return reply(error.status||503,{error:error.status===409?error.message:'服务操作失败，请稍后重试'})}
   });
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
-  const server=createServer();server.listen(Number(process.env.PROXY_CONTROL_PORT || 3794),'127.0.0.1');
-  process.on('SIGTERM',()=>{server.close();server.closeIdleConnections()});
+  const proxy=createTemporaryProxy({unit:UNIT,proxy:PROXY,stateFile:join(process.env.PROXY_STATE_DIR||'/var/lib/open-workbench-proxy','temporary.json')});
+  await proxy.recover();
+  if(process.argv.includes('--recover'))process.exit(0);
+  const github=createGitHub({proxy});
+  const local=await createLocalRunner({socket:socketPath(),proxy});
+  const server=createServer({github,proxy});server.listen(Number(process.env.PROXY_CONTROL_PORT || 3794),'127.0.0.1');
+  let closing=false;
+  async function close(){if(closing)return;closing=true;server.close();server.closeIdleConnections();await Promise.allSettled([github.close(),local.close()]);}
+  process.on('SIGTERM',close);process.on('SIGINT',close);
 }

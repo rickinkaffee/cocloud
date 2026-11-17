@@ -20,7 +20,7 @@ nav[data-workbench-tools]{transform:none!important;translate:none!important;will
 @media(prefers-reduced-motion:reduce){.cocloud-proxy-switch,.cocloud-proxy-switch-thumb{transition:none}}
 
 .cocloud-connection-trigger:focus-visible{outline:2px solid var(--ring);outline-offset:3px;border-radius:6px}
-.cocloud-connection-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:2px 0 4px;font-size:11px;line-height:1.6}
+.cocloud-connection-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:2px 0 4px;font-size:11px;line-height:1.6}
 .cocloud-connection-summary-item{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;white-space:nowrap}
 .cocloud-connection-icon{width:18px;height:18px;flex-shrink:0;color:var(--muted-foreground)}
 .cocloud-connection-summary-item[data-state=online] .cocloud-connection-icon{color:#16a34a}

@@ -24,3 +24,10 @@ web application or a script to inject into a live installation.
 See `../project-import/README.md`, `../proxy/README.md` and
 `../wechat/README.md` for private deployment configuration. Camera, gestures and
 Android downloads still require hardware acceptance on the installer's device.
+
+
+GitHub status is a fourth connection-center item. It distinguishes missing CLI,
+missing local login, unchecked credentials and successful/failed connectivity.
+Device authorization and explicit checks use the authenticated proxy bridge;
+see `../proxy/README.md`. The native browser regression covers the login code,
+GitHub authorization link, cancellation and transition to connected status.

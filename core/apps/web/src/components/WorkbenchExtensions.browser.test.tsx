@@ -55,12 +55,14 @@ it("keeps live connection summaries collapsed, shares settings state and clears 
   let offline = false;
   const fetcher = vi.fn(async (input: string) => {
     if (offline) return json({error: "login_required"}, 401);
+    if (input.endsWith("/github")) return json({installed: true, authenticated: true, connected: true, account: "test-account", canControl: false});
     return json(input.includes("/wechat/") ? {status: "已登录", db_available: false} : {enabled: true, startup: true, canControl: false});
   });
   vi.stubGlobal("fetch", fetcher);
   await using screen = await render(<CocloudConnectionCenter authorizationCount={2} canView={true} deviceSettings={<a href="/settings/access">管理设备与授权</a>}/>);
   await expect.poll(() => screen.container.querySelector('[data-connection-kind="proxy"]')?.getAttribute("data-state")).toBe("online");
   await expect.poll(() => screen.container.querySelector('[data-connection-kind="wechat"]')?.getAttribute("data-state")).toBe("online");
+  await expect.poll(() => screen.container.querySelector('[data-connection-kind="github"]')?.getAttribute("data-state")).toBe("online");
   expect(screen.container.querySelector(".cocloud-connection-count")?.textContent).toBe("2");
   expect(screen.container.querySelector(".cocloud-connection-settings")).toBeNull();
   await screen.getByRole("button", {name: /连接中心/}).click();
@@ -74,4 +76,34 @@ it("keeps live connection summaries collapsed, shares settings state and clears 
   await screen.rerender(<CocloudConnectionCenter authorizationCount={0} canView={true} deviceSettings={null}/>);
   expect(screen.container.querySelector(".cocloud-connection-count")?.textContent).toBe("0");
   expect(screen.container.querySelector('[data-connection-kind="authorization"]')?.getAttribute("data-state")).toBe("offline");
+});
+
+
+it("offers GitHub device login, cancellation and explicit connection checks without automatic login", async () => {
+  let github = {installed: true, authenticated: false, connected: null as boolean | null, account: null as string | null, canControl: true, busy: false, temporaryProxy: false, login: null as null | {state: string; code?: string; verificationUrl?: string; message: string}};
+  const actions: string[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (input: string, options: RequestInit = {}) => {
+    if (!input.includes("/github")) return json(input.includes("/wechat/") ? {status: "未登录", db_available: false} : {enabled: false, startup: false, canControl: true});
+    if (options.method === "POST") {
+      actions.push(input); expect(new Headers(options.headers).get("X-Cocloud-Proxy")).toBe("1");
+      if (input.endsWith("/login")) github = {...github, temporaryProxy: true, busy: true, login: {state: "pending", code: "ABCD-1234", verificationUrl: "https://github.com/login/device", message: "等待授权"}};
+      if (input.endsWith("/cancel")) github = {...github, temporaryProxy: false, busy: false, login: {state: "cancelled", message: "已取消登录"}};
+      if (input.endsWith("/check")) github = {...github, authenticated: true, connected: true, account: "test-account"};
+    }
+    return json(github);
+  }));
+  await using screen = await render(<CocloudConnectionCenter authorizationCount={0} canView={true} deviceSettings={null}/>);
+  await expect.poll(() => screen.container.querySelector('[data-connection-kind="github"]')?.getAttribute("data-state")).toBe("offline");
+  expect(actions).toEqual([]);
+  await screen.getByRole("button", {name: /连接中心/}).click();
+  await screen.getByRole("button", {name: "登录 GitHub", exact: true}).click();
+  await expect.element(screen.getByText("ABCD-1234", {exact: true})).toBeInTheDocument();
+  expect(screen.container.querySelector('a[href="https://github.com/login/device"]')).not.toBeNull();
+  await screen.getByRole("button", {name: "取消 GitHub 登录"}).click();
+  await expect.element(screen.getByText("已取消登录", {exact: true})).toBeInTheDocument();
+  expect(screen.container.textContent).not.toContain("ABCD-1234");
+  await screen.getByRole("button", {name: "检测 GitHub 连接"}).click();
+  await expect.poll(() => screen.container.querySelector('[data-connection-kind="github"]')?.getAttribute("data-state")).toBe("online");
+  expect(screen.container.textContent).toContain("@test-account");
+  expect(actions.map(path => path.split("/").at(-1))).toEqual(["login", "cancel", "check"]);
 });

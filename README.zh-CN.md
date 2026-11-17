@@ -115,3 +115,8 @@ Google／GitHub 的连接延迟，不做下载测速。使用 `config/proxy.env.
 [微信网关](extensions/wechat/README.md)为可选接入，需要自行提供兼容 API、
 noVNC 桌面及账号，仓库不附带运行实例。细节和边界见
 [同步说明](docs/SYNC-NOTES.zh-CN.md)与[附件下载说明](docs/DOWNLOADS.md)。
+
+
+连接中心现支持 GitHub 网页登录、登录配置及连接状态展示。登录、检测和
+[受管 Git/gh 命令](extensions/proxy/README.md#github-login-and-temporary-connectivity)
+会临时使用代理并自动恢复；原先开启的代理保持开启，开机设置不变。

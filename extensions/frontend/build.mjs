@@ -12,6 +12,7 @@ const compiled=await build({entryPoints:['src/hooks/useWorkbenchSidebarSwipe.ts'
 writeFileSync(out+'/Rb-compiled.js',compiled.outputFiles[0].text+'\nfunction Rb(...args){return WorkbenchGesture.useWorkbenchSidebarSwipe(...args)}');
 const test=spawnSync(process.execPath,['tests/gestures.mjs',out],{stdio:'inherit'});if(test.status!==0)process.exit(test.status||1);
 
+const githubTest=spawnSync(process.execPath,['tests/github-entry.mjs'],{stdio:'inherit'});if(githubTest.status!==0)process.exit(githubTest.status||1);
 const proxyTest=spawnSync(process.execPath,['tests/proxy-entry.mjs'],{stdio:'inherit'});if(proxyTest.status!==0)process.exit(proxyTest.status||1);
 
 for (const [name,globalName] of [['folder-upload','CocloudFolderUpload'],['upload-transport','CocloudUploadTransport'],['file-properties','CocloudFileProperties']]) {

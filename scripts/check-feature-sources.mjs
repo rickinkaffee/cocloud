@@ -1,7 +1,7 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const root=new URL('../',import.meta.url);
-for(const name of ['file-download.ts','folder-upload.ts','upload-transport.ts','file-properties.ts','authorized-clients.js','connection-center.js','wechat-entry.js','proxy-entry.js','motion.css']) {
+for(const name of ['file-download.ts','folder-upload.ts','upload-transport.ts','file-properties.ts','authorized-clients.js','connection-center.js','github-entry.js','wechat-entry.js','proxy-entry.js','motion.css']) {
  assert.equal(readFileSync(new URL('extensions/frontend/src/'+name,root),'utf8'),
   readFileSync(new URL('core/apps/web/src/extensions/'+name,root),'utf8'),name+' mirrors differ');
 }
