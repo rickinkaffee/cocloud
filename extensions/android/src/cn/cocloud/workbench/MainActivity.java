@@ -42,6 +42,12 @@ public final class MainActivity extends Activity {
     private Uri cameraUri;
     private static final int NOTIFICATION_PERMISSION = 101;
     private WebView web;
+    private boolean foreground;
+    private String pausedConversation;
+    private void rememberConversation(String url) {
+        String path = ConversationResume.conversation(url);
+        if (path != null) getPreferences(MODE_PRIVATE).edit().putString("conversation", path).apply();
+    }
     private BlobDownloads blobDownloads;
     private LinearLayout errorPanel;
     private LinearLayout layout;
@@ -95,6 +101,10 @@ public final class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.setWebViewClient(new WebViewClient() {
+            @Override public void doUpdateVisitedHistory(WebView view, String url, boolean reload) {
+                super.doUpdateVisitedHistory(view, url, reload);
+                if (foreground) rememberConversation(url);
+            }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
                 clearBackProgress();
                 sidebarBack.cancel();
@@ -183,8 +193,10 @@ public final class MainActivity extends Activity {
             }
         });
         web.setDownloadListener((url, agent, disposition, mime, length) -> download(url, agent, disposition, mime));
-        String launch = notificationUrl(getIntent());
+        String remembered = ConversationResume.conversation(getPreferences(MODE_PRIVATE).getString("conversation", null));
+        String launch = savedState == null ? notificationUrl(getIntent()) : null;
         if (launch != null) web.loadUrl(launch);
+        else if (remembered != null) web.loadUrl(remembered);
         else if (savedState == null || web.restoreState(savedState) == null) web.loadUrl(HOME);
         updater = new AppUpdater(this);
         updater.check(false);
@@ -221,7 +233,7 @@ public final class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent); setIntent(intent);
         String url = notificationUrl(intent);
-        if (url != null && web != null) web.loadUrl(url);
+        if (url != null && web != null) { pausedConversation = null; web.loadUrl(url); }
     }
     private void syncTaskNotifications(boolean ask) {
         if (!TaskNotificationService.enabled(this)) { stopService(new Intent(this, TaskNotificationService.class)); return; }
@@ -305,7 +317,12 @@ public final class MainActivity extends Activity {
         String script = "!window.dispatchEvent(new CustomEvent('cocloud-native-sidebar',{cancelable:true,detail:{action:'" + action + "'}}))";
         web.evaluateJavascript(script, handled -> {
             if ("true".equals(handled)) return;
-            if (web.canGoBack()) web.goBack();
+            android.webkit.WebBackForwardList stack = web.copyBackForwardList();
+            int index = stack.getCurrentIndex();
+            if ("back".equals(action) && index > 0 && ConversationResume.backgroundOnBack(web.getUrl(), stack.getItemAtIndex(index - 1).getUrl())) {
+                rememberConversation(web.getUrl());
+                moveTaskToBack(true);
+            } else if (web.canGoBack()) web.goBack();
             else moveTaskToBack(true);
         });
     }
@@ -362,10 +379,21 @@ public final class MainActivity extends Activity {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
     }
     @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }
-    @Override protected void onPause() { clearBackProgress(); dispatchSidebarProgress(sidebarBack.cancel(), null); CookieManager.getInstance().flush(); web.onPause(); super.onPause(); }
+    @Override protected void onPause() {
+        pausedConversation = ConversationResume.conversation(web.getUrl());
+        rememberConversation(pausedConversation);
+        foreground = false;
+        clearBackProgress(); dispatchSidebarProgress(sidebarBack.cancel(), null); CookieManager.getInstance().flush(); web.onPause(); super.onPause();
+    }
     @Override protected void onResume() {
         super.onResume();
-        if (web != null) web.onResume();
+        foreground = true;
+        if (web != null) {
+            web.onResume();
+            String target = ConversationResume.returnTarget(pausedConversation, web.getUrl());
+            pausedConversation = null;
+            if (target != null) web.loadUrl(target);
+        }
         if (updater != null) { updater.resumeInstall(); updater.showInstallResult(); }
         boolean asked = TaskNotificationService.preferences(this).getBoolean("asked", false);
         if (!asked) TaskNotificationService.preferences(this).edit().putBoolean("asked", true).apply();

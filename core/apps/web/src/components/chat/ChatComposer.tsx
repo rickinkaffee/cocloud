@@ -3308,7 +3308,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     prompt.trim() ? "text-foreground" : "text-placeholder",
                   )}
                   onPointerDown={(event) => event.preventDefault()}
-                  onClick={expandMobileComposerStable}
+                  onClick={() => { flushSync(expandMobileComposerStable); composerEditorRef.current?.focusAtEnd(); }}
                   aria-label="Expand composer"
                 >
                   {prompt.trim() ||

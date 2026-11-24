@@ -47,6 +47,7 @@ import {
 } from "./lib/windowControlsOverlay";
 import { startProviderAuthDelivery } from "./providerAuthDelivery";
 import { getRouter, type AppRouter } from "./router";
+import { cocloudResumeThread } from "./extensions/mobile-navigation.js";
 import { appAtomRegistry } from "./rpc/atomRegistry";
 import { primaryServerConfigAtom } from "./state/server";
 import { environmentShell } from "./state/shell";
@@ -170,7 +171,8 @@ export function startAppServices(): AppRouter {
   startProviderAuthDelivery();
 
   // Electron loads the app from a file-backed shell, so hash history avoids path resolution issues.
-  const router = getRouter(isElectron ? createHashHistory() : createBrowserHistory());
+  const history = isElectron ? createHashHistory() : createBrowserHistory();
+  const router = isElectron ? getRouter(history) : cocloudResumeThread(history, () => getRouter(history));
 
   if (isElectron) {
     syncDocumentElectronPlatformClasses(navigator.platform);

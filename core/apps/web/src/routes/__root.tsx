@@ -351,7 +351,9 @@ function EventRouter({
         scopedProjectKey(
           scopeProjectRef(payload.environment.environmentId, payload.bootstrapProjectId),
         );
-      useUiStateStore.getState().setProjectExpanded(bootstrapProjectKey, true);
+      if (useUiStateStore.getState().projectExpandedById[bootstrapProjectKey] === undefined) {
+        useUiStateStore.getState().setProjectExpanded(bootstrapProjectKey, true);
+      }
 
       if (readPathname() !== "/") {
         return;

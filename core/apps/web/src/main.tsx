@@ -1,4 +1,7 @@
 import "./extensions/mobile-focus-intent.js";
+import "./extensions/mobile-composer.js";
+import "./extensions/mobile-navigation.css";
+import { cocloudLoadCheckpoint } from "./extensions/mobile-navigation.js";
 import "./extensions/mobile-focus-guard.js";
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -12,6 +15,7 @@ import { startAppServices } from "./appInit";
 import { AppRoot } from "./AppRoot";
 import { clearChunkReloadGuard, reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
 
+if (!isElectron) await cocloudLoadCheckpoint();
 const router = startAppServices();
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;

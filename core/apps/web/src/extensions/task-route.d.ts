@@ -1,0 +1,1 @@
+export function cocloudThreadProgress(rows: ReturnType<typeof import('../state/entities').useTimelineVisibleTurnItems>, latestRun: {runId?: string | null} | null | undefined, threadKey: string | null): import('react').ReactElement | null;

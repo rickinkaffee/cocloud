@@ -82,6 +82,9 @@ run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.CameraPolicyTe
 run(java / 'bin/javac', '-encoding', 'UTF-8', '-d', test_classes,
     config, source / 'src/cn/cocloud/workbench/DownloadPolicy.java', source / 'tests/DownloadPolicyTest.java')
 run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.DownloadPolicyTest')
+run(java / 'bin/javac', '-encoding', 'UTF-8', '-cp', test_classes, '-d', test_classes,
+    source / 'src/cn/cocloud/workbench/ConversationResume.java', source / 'tests/ConversationResumeTest.java')
+run(java / 'bin/java', '-cp', test_classes, 'cn.cocloud.workbench.ConversationResumeTest')
 run('node', source / 'tests/blob-download.test.mjs')
 
 run(tools / 'aapt2', 'compile', '--dir', source / 'res', '-o', build / 'resources.zip')

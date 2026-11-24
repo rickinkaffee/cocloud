@@ -1,0 +1,17 @@
+[data-chat-composer-overlay="true"][style*="--cocloud-ime-lift"] { translate: 0 var(--cocloud-ime-lift); }
+.cocloud-thread-progress {position:relative;container-type:inline-size;flex:none;min-width:0;border-bottom:1px solid var(--border);font-size:.8125rem;color:var(--foreground)}
+.cocloud-thread-progress summary {position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:.25rem;width:4rem;min-height:2.875rem;cursor:pointer;font-variant-numeric:tabular-nums}
+.cocloud-thread-progress summary::before {content:'▸'}
+.cocloud-thread-progress[open] summary::before {content:'▾'}
+.cocloud-route {display:flex;list-style:none;overflow-x:auto;overscroll-behavior-x:contain;margin:-2.875rem 0 0 4rem;padding:0 .35rem;scrollbar-width:thin}
+.cocloud-route li {position:relative;flex:1 0 4.75rem;min-width:0;text-align:center}
+@container (min-width:38rem) {.cocloud-route li {flex-basis:7rem}}
+.cocloud-route li:not(:last-child)::before {content:'';position:absolute;top:.86rem;left:50%;width:100%;height:2px;background:var(--border);pointer-events:none}
+.cocloud-route button {position:relative;display:grid;justify-items:center;align-content:center;gap:.12rem;width:100%;min-height:2.875rem;padding:0 .25rem;color:inherit;cursor:pointer;border:0;background:transparent;font:inherit}
+.cocloud-stop {background:var(--background,Canvas);border-radius:50%;font-weight:700;line-height:1rem}
+.cocloud-route [data-state=running] .cocloud-stop {color:var(--primary,currentColor)}
+.cocloud-route [data-state=running],.cocloud-route [aria-expanded=true] {font-weight:650}
+.cocloud-route [aria-expanded=true] .cocloud-stop-label {text-decoration:underline;text-underline-offset:.16em}
+.cocloud-stop-label {max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1rem}
+.cocloud-route button:focus-visible {outline:2px solid currentColor;outline-offset:-3px}
+.cocloud-route-detail:not([hidden]) {margin:0 .75rem .4rem;padding:.4rem .65rem;border-inline-start:2px solid var(--primary,currentColor);background:var(--muted);overflow-wrap:anywhere;max-height:25dvh;overflow:auto;white-space:pre-wrap}

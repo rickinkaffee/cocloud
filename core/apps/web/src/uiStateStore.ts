@@ -443,8 +443,10 @@ interface UiStateStore extends UiState {
   ) => void;
 }
 
+import { restoreProjectChoices, saveProjectChoices } from "./extensions/project-choices.js";
+
 export const useUiStateStore = create<UiStateStore>((set) => ({
-  ...readPersistedState(),
+  ...restoreProjectChoices(readPersistedState()),
   markThreadVisited: (threadId, visitedAt) =>
     set((state) => markThreadVisited(state, threadId, visitedAt)),
   markThreadUnread: (threadId, latestTurnCompletedAt) =>
@@ -456,8 +458,10 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
   setSidebarProjectScopeKeys: (projectKeys) =>
     set((state) => setSidebarProjectScopeKeys(state, projectKeys)),
   setPullRequestMergeMethod: (method) => set((state) => setPullRequestMergeMethod(state, method)),
-  setProjectExpanded: (projectIds, expanded) =>
-    set((state) => setProjectExpanded(state, projectIds, expanded)),
+  setProjectExpanded: (projectIds, expanded) => {
+    saveProjectChoices(projectIds, expanded);
+    set((state) => setProjectExpanded(state, projectIds, expanded));
+  },
   reorderProjects: (currentProjectOrder, draggedProjectIds, targetProjectIds) =>
     set((state) =>
       reorderProjects(state, currentProjectOrder, draggedProjectIds, targetProjectIds),
