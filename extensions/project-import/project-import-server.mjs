@@ -12,7 +12,7 @@ import { placeUpload } from "./upload-destination.mjs";
 
 const PREFIX = "/api/cocloud/imports";
 const CHUNK = 8 * 1024 * 1024;
-const MAX_FILES = 50_000;
+const MAX_FILES = 100_000;
 const MAX_BYTES = 20 * 1024 ** 3;
 const MAX_MANIFEST = 24 * 1024 ** 2;
 const EXPIRES = 24 * 60 * 60 * 1000;
@@ -76,7 +76,7 @@ export function validateManifest(value) {
   const directories = value.directories ?? [];
   if (
     !Array.isArray(directories) ||
-    directories.length + files.length > 100_000 ||
+    directories.length + files.length > 200_000 ||
     directories.some(
       (path) =>
         !validRelativePath(path) ||

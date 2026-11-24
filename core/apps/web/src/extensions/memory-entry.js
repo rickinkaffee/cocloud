@@ -1,11 +1,12 @@
 import * as X from "react";
-// Mounted by the workbench's React sidebar footer between Devices and Balances.
 // Uses the host theme/classes and performs no background history requests.
-export function CocloudMemoryEntry({language = navigator.language} = {}) {
+export function CocloudMemoryEntry({language = navigator.language, compact = false} = {}) {
  const h=X.createElement;
  const english=language?.startsWith('en');
  const title=english?'Memory center':'记忆中心';
  const svg=(paths)=>h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.75,strokeLinecap:'round',strokeLinejoin:'round',className:'size-4 shrink-0','aria-hidden':true},...paths.map(d=>h('path',{key:d,d})));
+ if(compact)return h('a',{'data-workbench-memory':true,href:'/memory/',onClick:openCocloudMemory,className:'cocloud-connection-summary-item cocloud-memory-compact', 'aria-label':title,title:english?'History, consolidation progress and memory search':'历史来源、整理进度与记忆检索'},
+   svg(['M4 19.5A2.5 2.5 0 0 1 6.5 17H20','M6.5 3H20v19H6.5A2.5 2.5 0 0 1 4 19.5v-14A2.5 2.5 0 0 1 6.5 3Z','M8 7h8','M8 11h6']));
  return h('section',{'data-workbench-memory':true,'aria-label':title,className:'min-w-0 rounded-xl border border-sidebar-border bg-secondary/40 px-3 py-2'},
   h('a',{href:'/memory/',onClick:openCocloudMemory,className:'flex min-h-9 w-full items-center gap-2 text-left text-xs text-sidebar-foreground rounded-md focus-visible:outline focus-visible:outline-2',title:english?'History, consolidation progress and memory search':'历史来源、整理进度与记忆检索'},
    svg(['M4 19.5A2.5 2.5 0 0 1 6.5 17H20','M6.5 3H20v19H6.5A2.5 2.5 0 0 1 4 19.5v-14A2.5 2.5 0 0 1 6.5 3Z','M8 7h8','M8 11h6']),

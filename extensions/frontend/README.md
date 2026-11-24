@@ -7,7 +7,7 @@ file-properties and gesture logic; they do not contain deployed minified bundles
 Install dev dependencies with `npm ci`, install or select Playwright Chromium
 using `CHROMIUM_PATH`, then run `npm run build`. This compiles the Ionic gesture
 adapter and transfer/property helpers, runs 304 gesture assertions, tests
-skip/overwrite/keep-both and placement, sends 9,277 synthetic files / 84 MiB over
+skip/overwrite/keep-both and placement, sends 52,905 synthetic files / 468.93 MiB over
 real HTTP with overwrite, and exercises hangs, local reads, offset recovery,
 restart retries, empty files, cancellation and file-property dialogs/downloads.
 The final download regression checks a 108,781,617-byte native attachment with

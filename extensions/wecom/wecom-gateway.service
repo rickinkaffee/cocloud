@@ -1,0 +1,21 @@
+[Unit]
+Description=Enterprise WeChat desktop access gateway
+After=network.target
+
+[Service]
+DynamicUser=yes
+SupplementaryGroups=wecom-desktop-gateway
+EnvironmentFile=/etc/workbench/wecom.env
+ExecStart=/usr/bin/env node /opt/workbench/extensions/wecom/gateway.mjs
+Restart=on-failure
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -135,7 +135,7 @@ metadata = {'schema': 1, 'packageName': manifest.attrib['package'], 'version': v
             'origin': origin + '/',
             'capabilities': ['native-blob-download-v1', 'sidebar-predictive-back-v1', 'native-camera-capture-v1'],
             'blobTransportSha256': hashlib.sha256((source / 'assets/blob-download.js').read_bytes()).hexdigest(),
-            'notes': '同步拍照上传与更新结果核对，保留原生下载、登录和侧栏手势。'}
+            'notes': '移除工作台 App 的自定义边缘滑动。Android 14 及以上使用系统返回手势控制侧栏；旧版 Android 可通过按钮打开侧栏。'}
 signing_key = private / 'manifest-signing.pem'
 if not signing_key.exists():
     key_bytes = subprocess.check_output(['openssl', 'pkcs12', '-in', str(key), '-passin', 'file:' + str(password), '-nocerts', '-nodes'])

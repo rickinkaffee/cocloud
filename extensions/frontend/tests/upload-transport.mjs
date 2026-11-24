@@ -83,7 +83,7 @@ const server=await createImportServer({root,resolveProject:async()=>({workspaceR
 server.listen(0,'127.0.0.1');await once(server,'listening');
 const base=`http://127.0.0.1:${server.address().port}/api/cocloud/imports`;
 try{
- const count=9277,total=84*1024**2,unit=Math.floor(total/(count-1)),bytes=new Uint8Array(unit).fill(0x5a);
+ const count=52905,total=Math.round(468.93*1024**2),unit=Math.floor(total/(count-1)),bytes=new Uint8Array(unit).fill(0x5a);
  const transferFiles=Array.from({length:count},(_,i)=>({path:`启动与诊断/${i===3?'README.md':i+'.bin'}`,file:i===0?new Blob([]):new Blob([i===count-1?new Uint8Array(total-unit*(count-2)).fill(0x5a):bytes])}));
  const request=async(path,init={})=>{
   const response=await fetch(base+path,{...init,headers:{'X-Cocloud-Import':'1',...init.headers}});
@@ -96,5 +96,5 @@ try{
  assert.equal(await readFile(join(result.path,'server-only.txt'),'utf8'),'keep');
  assert.equal((await readFile(join(result.path,'启动与诊断/0.bin'))).length,0);
  assert.deepEqual(new Uint8Array(await readFile(join(result.path,'启动与诊断/README.md'))),bytes);
- console.log(`Upload transport: real HTTP ${count} files / 84 MiB with overwrite committed in ${Date.now()-began}ms; hung fifth request, unreadable local file, bounded retries, targeted offset recovery, zero-byte retry and cancel passed`);
+ console.log(`Upload transport: real HTTP ${count} files / ${(total/1024**2).toFixed(2)} MiB with overwrite committed in ${Date.now()-began}ms; hung fifth request, unreadable local file, bounded retries, targeted offset recovery, zero-byte retry and cancel passed`);
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(root,{recursive:true,force:true});}

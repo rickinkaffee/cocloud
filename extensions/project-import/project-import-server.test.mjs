@@ -91,6 +91,38 @@ async function fixture(t, options = {}) {
   return { root, call, start };
 }
 
+NodeTest.test('52,905 incoming files pass HTTP preparation; 100,000-file boundary includes directories', async t => {
+  const {call, root} = await fixture(t);
+  const config = await (await call('/config')).json();
+  NodeAssert.equal(config.maxFiles, 100_000);
+  const count = 52_905, total = Math.round(468.93 * 1024 ** 2), unit = Math.floor(total / count);
+  const files = Array.from({length: count}, (_, i) => ({path: `nested/${i}.bin`,
+    size: i === count - 1 ? total - unit * (count - 1) : unit}));
+  const response = await call('', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: 'large-selection', files, directories: ['nested', 'empty']})});
+  NodeAssert.equal(response.status, 201);
+  const session = await response.json();
+  NodeAssert.equal(session.fileCount, count);
+  NodeAssert.equal(session.totalBytes, total);
+  const chunk = await call(`/${session.id}/files/${count - 1}?offset=0`,
+    {method: 'PUT', body: Buffer.alloc(files.at(-1).size, 0x5a)});
+  NodeAssert.equal(chunk.status, 200);
+  NodeAssert.equal((await (await call(`/${session.id}/files/${count - 1}`)).json()).offset, files.at(-1).size);
+  await call(`/${session.id}`, {method: 'DELETE'});
+  await NodeAssert.rejects(NodeFSP.stat(NodePath.join(root, '.cocloud-imports', session.id)), {code: 'ENOENT'});
+  const boundary = Array.from({length: config.maxFiles}, (_, i) => ({path: `${i}`, size: 0}));
+  NodeAssert.equal(validateManifest({name: 'boundary', files: boundary, directories: ['empty']}).files.length, config.maxFiles);
+  const accepted = await call('', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: 'boundary', files: boundary, directories: ['empty']})});
+  NodeAssert.equal(accepted.status, 201);
+  await call(`/${(await accepted.json()).id}`, {method: 'DELETE'});
+  boundary.push({path: 'overflow', size: 0});
+  const rejected = await call('', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: 'overflow', files: boundary})});
+  NodeAssert.equal(rejected.status, 400);
+  NodeAssert.equal((await rejected.json()).error, 'invalid_file_count');
+});
+
 NodeTest.test(
   "project sync merges binary files, retains destination-only files, backs up replaced files and preserves empty folders",
   async (t) => {
@@ -580,7 +612,7 @@ NodeTest.test('existing projects above 50,000 files allow small uploads; count o
   const response=await call('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'existing',projectId:'existing',baseVersion:preview.version,files:[{path:'new.txt',size:3}]})});
   NodeAssert.equal(response.status,201);
   await call(`/${(await response.json()).id}`,{method:'DELETE'});
-  const rejected=await call('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'too-many',files:Array.from({length:50001},(_,index)=>({path:`${index}`,size:0}))})});
+  const rejected=await call('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'too-many',files:Array.from({length:100001},(_,index)=>({path:`${index}`,size:0}))})});
   NodeAssert.equal((await rejected.json()).error,'invalid_file_count');
 });
 

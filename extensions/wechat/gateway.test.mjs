@@ -7,7 +7,7 @@ import {createGateway} from './gateway.mjs';
 
 test('workbench authentication protects desktop, credentials, API and websocket',async t=>{
   const origin='https://workbench.test';let upstreamHeaders;const peers=new Set();
-  const upstream=http.createServer((req,res)=>{upstreamHeaders=req.headers;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({path:req.url}));});
+  const upstream=http.createServer((req,res)=>{upstreamHeaders=req.headers;res.setHeader('Content-Type','application/json');res.end(JSON.stringify(req.url==='/status'?{status:'已登录',db_available:true}:{path:req.url}));});
   upstream.on('upgrade',(req,socket)=>{
     peers.add(socket);socket.on('close',()=>peers.delete(socket));socket.on('error',()=>{});
     const accept=createHash('sha1').update(req.headers['sec-websocket-key']+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
@@ -27,6 +27,7 @@ test('workbench authentication protects desktop, credentials, API and websocket'
   assert.equal((await fetch(base+'/wechat/',{headers:paired})).status,200);
   assert.deepEqual(await (await fetch(base+'/wechat/vnc-config',{headers:paired})).json(),{password:'test-vnc-password'});
   assert.deepEqual(await (await fetch(base+'/wechat/api/messages?after=2',{headers:paired})).json(),{path:'/messages?after=2'});
+  assert.deepEqual(await (await fetch(base+'/wechat/api/status',{headers:paired})).json(),{status:'已登录',db_available:true});
   assert.equal(upstreamHeaders.cookie,undefined);assert.equal(upstreamHeaders.authorization,'Bearer test-api-token');
   assert.equal((await fetch(base+'/wechat/api/command',{method:'POST',headers:{...paired,origin}})).status,404);
   assert.equal((await fetch(base+'/wechat/api/messages/send',{method:'POST',headers:paired})).status,403);

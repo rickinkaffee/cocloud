@@ -2,7 +2,6 @@ import { SkillManagementSection } from "./SkillManagementSection";
 import { usePrimaryEnvironmentId } from "../state/environments";
 import { useWorkbenchI18n } from "../i18n";
 import "../extensions/motion.css";
-import { CocloudMemoryEntry } from "../extensions/memory-entry.js";
 import { WorkbenchConnectionCenter } from "./WorkbenchConnectionCenter";
 import { WorkbenchFolderUpload } from "./WorkbenchFolderUpload";
 export function WorkbenchExtensions() {
@@ -10,8 +9,7 @@ export function WorkbenchExtensions() {
   const { language, setLanguage } = useWorkbenchI18n();
   return (
     <div className="px-2 py-1">
-      <CocloudMemoryEntry language={language} />
-      <WorkbenchConnectionCenter />
+      <WorkbenchConnectionCenter language={language} />
       <WorkbenchFolderUpload />
       <a className="block px-3 py-2 text-xs" href="/floe/" target="_blank" rel="noreferrer">
         Shared browser

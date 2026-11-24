@@ -1,11 +1,11 @@
 import * as X from "react";
 export function cocloudWechatStatus(state,error) {
- if(error)return {label:'状态暂不可用',detail:error,tone:'text-amber-500'};
+ if(error)return {label:'状态暂不可用',detail:error,tone:'text-red-500'};
  if(!state)return {label:'检查中…',detail:'正在读取小号状态',tone:'text-muted-foreground'};
  if(state.status==='已登录')return state.db_available
   ?{label:'在线',detail:'已登录 · 消息收发已就绪',tone:'text-emerald-500'}
-  :{label:'已登录',detail:'消息读取尚未就绪',tone:'text-amber-500'};
- if(state.status==='等待扫码登录')return {label:'待登录',detail:'打开微信完成扫码或手机确认',tone:'text-amber-500'};
+  :{label:'已登录',detail:'消息读取尚未就绪',tone:'text-red-500'};
+ if(state.status==='等待扫码登录')return {label:'待登录',detail:'打开微信完成扫码或手机确认',tone:'text-muted-foreground'};
  return {label:'未运行',detail:'微信客户端暂未就绪',tone:'text-muted-foreground'};
 }
 

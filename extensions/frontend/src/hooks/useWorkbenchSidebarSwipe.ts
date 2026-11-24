@@ -40,6 +40,7 @@ export function useWorkbenchSidebarSwipe(enabled: boolean, open: boolean, setOpe
     } catch {}
 
     const root = document.documentElement;
+    const nativeOnly = navigator.userAgent.includes('CocloudAndroid/');
     root.dataset.workbenchGestureEngine = 'ionic-9.0.11';
     let drag: Drag | null = null;
     let settling: Drag | null = null;
@@ -198,7 +199,7 @@ export function useWorkbenchSidebarSwipe(enabled: boolean, open: boolean, setOpe
         document.removeEventListener(type, listener, {...options, capture: true});
       },
     };
-    const gesture = createGesture({
+    const gesture = nativeOnly ? null : createGesture({
       el: surface as unknown as HTMLElement, gestureName: 'cocloud-workbench-panels', gesturePriority: 40,
       direction: 'x', threshold: 14, maxAngle: 30, passive: false,
       canStart(detail) {
@@ -253,17 +254,19 @@ export function useWorkbenchSidebarSwipe(enabled: boolean, open: boolean, setOpe
       event.preventDefault(); event.stopPropagation();
     };
     const multiTouch = (event: TouchEvent) => { if (event.touches.length > 1) cancel(); };
-    document.addEventListener('touchmove', ownMove, {capture: true, passive: false});
-    document.addEventListener('touchstart', multiTouch, {capture: true, passive: true});
-    gesture.enable();
+    if (gesture) {
+      document.addEventListener('touchmove', ownMove, {capture: true, passive: false});
+      document.addEventListener('touchstart', multiTouch, {capture: true, passive: true});
+      gesture.enable();
+    }
     const abort = () => {
-      aborting = true; gesture.enable(false); cancel(); aborting = false;
+      aborting = true; gesture?.enable(false); cancel(); aborting = false;
       if (settling) {
         const state = settling; settling = null;
         flushSync(() => commitPanel(state.side, settleTarget)); clean(state);
       }
       if (settlingFrame) cancelAnimationFrame(settlingFrame); settlingFrame = 0;
-      gesture.enable();
+      gesture?.enable();
     };
     const nativeSidebar = (event: Event) => {
       const info = (event as CustomEvent).detail ?? {};
@@ -309,19 +312,21 @@ export function useWorkbenchSidebarSwipe(enabled: boolean, open: boolean, setOpe
     const visibility = () => { if (document.hidden) abort(); };
     let width = innerWidth;
     const resize = () => { if (width !== innerWidth) { width = innerWidth; abort(); } };
-    document.addEventListener('click', click, true);
+    if (gesture) document.addEventListener('click', click, true);
     document.addEventListener('visibilitychange', visibility);
     window.addEventListener('resize', resize);
     window.addEventListener('cocloud-native-sidebar', nativeSidebar);
     return () => {
-      disposed = true; gesture.destroy();
+      disposed = true; gesture?.destroy();
       if (settlingFrame) cancelAnimationFrame(settlingFrame);
       if (drag) clean(drag); if (settling) clean(settling);
       drag = settling = null;
       delete root.dataset.workbenchGestureEngine;
-      document.removeEventListener('touchmove', ownMove, true);
-      document.removeEventListener('touchstart', multiTouch, true);
-      document.removeEventListener('click', click, true);
+      if (gesture) {
+        document.removeEventListener('touchmove', ownMove, true);
+        document.removeEventListener('touchstart', multiTouch, true);
+        document.removeEventListener('click', click, true);
+      }
       document.removeEventListener('visibilitychange', visibility);
       window.removeEventListener('resize', resize);
       window.removeEventListener('cocloud-native-sidebar', nativeSidebar);

@@ -13,7 +13,7 @@ projects; their folders must be within `WORKBENCH_PROJECTS`.
 Uploads offer a containing folder or the selected project's root. Same-name
 folders merge; same-name files prompt for skip, overwrite or keep-both, optionally
 for all remaining conflicts. Skip sends no bytes; keep-both numbers the incoming
-file. Cancel during conflict review writes nothing. Upload limits (50,000 files,
+file. Cancel during conflict review writes nothing. Upload limits (100,000 files,
 20 GiB) apply only to the selected incoming files, never the existing project.
 Browser directory picking cannot represent empty local directories; the API
 supports an explicit `directories` list for clients that can enumerate them.
@@ -43,6 +43,6 @@ explicitly. Android uses its installed WebView download handler; test on hardwar
 `python3 build.py /path/to/private-release` runs the HTTP regressions before
 emitting a source snapshot and hash receipt. `node --test
 project-import-server.test.mjs` runs them directly. The portable frontend tests in
-`../frontend/` exercise the same transport with 9,277 synthetic files / 84 MiB,
+`../frontend/` exercise the same transport with 52,905 synthetic files / 468.93 MiB,
 request hangs, local read failures, resume, retries and cancellation. No project,
 account, staging file, database, APK or credential is shipped in the repository.

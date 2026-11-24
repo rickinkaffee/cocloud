@@ -12,7 +12,7 @@ const messages: Record<string, string> = {
   upload_expired: "上传暂存已过期，请重新选择文件夹。",
   upload_not_found: "上传暂存不存在，请重新选择文件夹。",
   folder_too_large: "本次上传超过 20 GB 限制。",
-  invalid_file_count: "文件数量超过 50,000 个上传限制。",
+  invalid_file_count: "文件数量超过 100,000 个上传限制。",
   insufficient_disk_space: "服务器可用空间不足。",
   project_outside_sync_root: "所选项目不在允许上传的目录中。",
   login_required: "请重新登录工作台后重试。",
@@ -33,7 +33,7 @@ export function selectedFolder(files: File[]): Selection | null {
   const entries = files.map(file => ({file, path: file.webkitRelativePath
     ? file.webkitRelativePath.slice(name.length + 1) : file.name}));
   const totalBytes = entries.reduce((sum, {file}) => sum + file.size, 0);
-  if (entries.length > 50_000) throw Error("文件数量超过 50,000 个上传限制。");
+  if (entries.length > 100_000) throw Error("文件数量超过 100,000 个上传限制。");
   if (totalBytes > 20 * 1024 ** 3) throw Error("本次上传超过 20 GB 限制。");
   return {name, files: entries, totalBytes};
 }

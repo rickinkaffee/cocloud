@@ -1,1 +1,1 @@
-export function CocloudConnectionCenter(props: {authorizationCount: number | null; canView: boolean; deviceSettings: import("react").ReactNode}): import("react").ReactElement;
+export function CocloudConnectionCenter(props: {language?: string; authorizationCount: number | null; canView: boolean; canOpenWecom?: boolean; deviceSettings: import("react").ReactNode}): import("react").ReactElement;

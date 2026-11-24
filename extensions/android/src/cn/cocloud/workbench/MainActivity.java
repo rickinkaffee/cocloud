@@ -9,20 +9,16 @@ import android.content.pm.PackageManager;
 import android.app.NotificationManager;
 import android.provider.Settings;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Environment;
-import android.os.SystemClock;
 import android.view.Display;
-import android.view.MotionEvent;
 import android.view.WindowManager;
 import android.window.BackEvent;
 import android.window.OnBackAnimationCallback;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
-import java.util.Arrays;
 import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.URLUtil;
@@ -59,8 +55,6 @@ public final class MainActivity extends Activity {
         backFramePending = false;
         dispatchSidebarProgress(sidebarBack.progress(latestBackProgress), null);
     };
-    private boolean recentLeftEdge;
-    private long lastTouchAt;
 
     private static boolean trusted(Uri uri) {
         return "https".equals(uri.getScheme()) && "workbench.example".equals(uri.getHost())
@@ -85,16 +79,6 @@ public final class MainActivity extends Activity {
         web = new WebView(this);
         blobDownloads = new BlobDownloads(this, web);
         layout.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
-        web.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-            int height = bottom - top;
-            int strip = Math.round(200 * getResources().getDisplayMetrics().density);
-            int edge = Math.round(28 * getResources().getDisplayMetrics().density);
-            int start = Math.max(0, (height - strip) / 2);
-            int width = right - left;
-            web.setSystemGestureExclusionRects(Arrays.asList(
-                new Rect(0, start, edge, Math.min(height, start + strip)),
-                new Rect(Math.max(0, width - edge), start, width, Math.min(height, start + strip))));
-        });
         configureBackNavigation();
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -314,13 +298,7 @@ public final class MainActivity extends Activity {
         }
     }
     @Override public void onBackPressed() {
-        handleBack(SystemClock.uptimeMillis() - lastTouchAt < 1500 ? (recentLeftEdge ? "open" : "close") : "back");
-    }
-    @Override public boolean dispatchTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
-            recentLeftEdge = event.getX() <= 32 * getResources().getDisplayMetrics().density;
-        lastTouchAt = SystemClock.uptimeMillis();
-        return super.dispatchTouchEvent(event);
+        handleBack("back");
     }
     private void handleBack(String action) {
         if (web == null) { moveTaskToBack(true); return; }
@@ -348,7 +326,9 @@ public final class MainActivity extends Activity {
                 private int edge = -1;
                 @Override public void onBackStarted(BackEvent event) {
                     clearBackProgress();
-                    edge = event.getSwipeEdge();
+                    int swipeEdge = event.getSwipeEdge();
+                    if (swipeEdge != BackEvent.EDGE_LEFT && swipeEdge != BackEvent.EDGE_RIGHT) return;
+                    edge = swipeEdge;
                     dispatchSidebarProgress(sidebarBack.start(edge == BackEvent.EDGE_RIGHT), null);
                 }
                 @Override public void onBackProgressed(BackEvent event) {
@@ -376,7 +356,7 @@ public final class MainActivity extends Activity {
                 }
             };
         } else if (Build.VERSION.SDK_INT >= 33) {
-            backCallback = () -> handleBack(SystemClock.uptimeMillis() - lastTouchAt < 1500 ? (recentLeftEdge ? "open" : "close") : "back");
+            backCallback = () -> handleBack("back");
         }
         if (Build.VERSION.SDK_INT >= 33)
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);

@@ -7,7 +7,9 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,ar
 let checks=0;const errors=[];
 try {
 for(const width of [360,390,430,767]) {
- const page=await browser.newPage({viewport:{width,height:844},hasTouch:true,isMobile:true});
+ const nativeOnly=width===430;
+ const userAgent=nativeOnly?'Mozilla/5.0 (Linux; Android 15) CocloudAndroid/1.0.9':undefined;
+ const page=await browser.newPage({viewport:{width,height:844},hasTouch:true,isMobile:true,userAgent});
  page.setDefaultTimeout(2500);page.on('pageerror',e=>errors.push(e.message));
  await page.setContent(`<meta name=viewport content="width=device-width,initial-scale=1"><style>
  body{margin:0}#content{position:fixed;inset:0;overflow-y:auto}#text{height:2400px}#code{overflow:auto;width:200px}#code>div{width:600px}
@@ -49,6 +51,12 @@ for(const width of [360,390,430,767]) {
  for(const side of ['left','right'])for(const y of [100,422,700]) {
   const x=side==='left'?20:width-20,sign=side==='left'?1:-1;
   await fire('touchstart',x,y);assert.equal(await fire('touchmove',x+sign*8,y+2),false);
+  if(nativeOnly){
+   assert.equal(await fire('touchmove',x+sign*70,y+6),false);
+   await fire('touchend',x+sign*70,y+6);await idle();
+   assert.deepEqual(await state(),{left:false,right:false});checks++;
+   continue;
+  }
   assert.equal(await fire('touchmove',x+sign*20,y+4),true);
   await fire('touchmove',x+sign*70,y+6);await page.evaluate(()=>new Promise(requestAnimationFrame));
   const w=await page.$eval(side==='left'?'#drawer':'#tools',e=>e.getBoundingClientRect().width);
@@ -84,9 +92,15 @@ for(const width of [360,390,430,767]) {
  }
  // Native edge open, cancellation and finish on either edge; no release jump.
  let id=0;
+ assert.equal(await native({action:'back'}),false,'back without an edge must not open a panel');
  for(const side of ['left','right']){
   let token=++id;assert.equal(await native({action:'start',edge:side,id:token}),true);
   await native({action:'progress',edge:side,id:token,progress:.4});
+  const selector=side==='left'?'#drawer':'#tools';
+  await page.waitForFunction(selector=>{
+   const el=document.querySelector(selector),offset=Math.abs(new DOMMatrixReadOnly(getComputedStyle(el).transform).m41);
+   return Math.abs(offset-el.getBoundingClientRect().width*.6)<2;
+  },selector);
   const jump=await page.evaluate(({id,side})=>{const el=document.querySelector(side==='left'?'#drawer':'#tools');const x=new DOMMatrixReadOnly(getComputedStyle(el).transform).m41;window.dispatchEvent(new CustomEvent('cocloud-native-sidebar',{cancelable:true,detail:{action:'finish',id}}));return Math.abs(x-new DOMMatrixReadOnly(getComputedStyle(el).transform).m41);},{id:token,side});
   assert.ok(jump<2);await idle();assert.equal((await state())[side],true);checks++;
   token=++id;await native({action:'start',edge:side,id:token});await native({action:'progress',id:token,progress:.6});
@@ -94,7 +108,7 @@ for(const width of [360,390,430,767]) {
   token=++id;await native({action:'start',edge:side,id:token});await native({action:'finish',id:token});await idle();assert.deepEqual(await state(),{left:false,right:false});checks++;
  }
  // Wake conversations over an already-open browser/tools panel, before release.
- for(const source of ['touch','native']) {
+ for(const source of nativeOnly?['native']:['touch','native']) {
   await setState('right');
   if(source==='touch') {
    await fire('touchstart',20,400);await fire('touchmove',40,402);
@@ -124,16 +138,18 @@ for(const width of [360,390,430,767]) {
   await fire('touchstart',width/2,400,target);await fire('touchmove',width/2+sign*55,404,target);await fire('touchcancel',width/2+sign*55,404,target);await idle();assert.equal((await state())[side],true);checks++;
   await fire('touchstart',width/2,400,target);await fire('touchmove',width/2+sign*55,404,target);await fire('touchmove',width/2+sign*2,401,target);await fire('touchend',width/2+sign*2,401,target);await idle();assert.equal((await state())[side],true);checks++;
  }
- await page.emulateMedia({reducedMotion:'reduce'});await setState('left');await fire('touchstart',100,400,'drawer');await fire('touchmove',160,403,'drawer');await fire('touchend',160,403,'drawer');await idle();assert.equal((await state()).left,false);checks++;
+ await page.emulateMedia({reducedMotion:'reduce'});await setState('left');await fire('touchstart',100,400,'drawer');await fire('touchmove',160,403,'drawer');await fire('touchend',160,403,'drawer');await idle();assert.equal((await state()).left,nativeOnly);checks++;
  await page.emulateMedia({reducedMotion:'no-preference'});
  // Browser native touch, scrolling and actual hit testing (not only synthetic events).
  const cdp=await page.context().newCDPSession(page);
  const touch=async(x,y,points)=>{await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});for(const[dx,dy]of points)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx,y:y+dy}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await idle();};
  for(const side of ['left','right']){
   await setState('closed');const sign=side==='left'?1:-1;
-  await touch(side==='left'?20:width-20,400,[[8*sign,2],[20*sign,4],[40*sign,5],[70*sign,6]]);assert.equal((await state())[side],true);checks++;
+  await touch(side==='left'?20:width-20,400,[[8*sign,2],[20*sign,4],[40*sign,5],[70*sign,6]]);
+  assert.equal((await state())[side],!nativeOnly,'raw edge touch must open only in the standalone browser');checks++;
   for(const direction of [-1,1]){
-   await setState(side);await touch(width/2,400,[[8*direction,2],[20*direction,4],[45*direction,5],[70*direction,6]]);assert.deepEqual(await state(),{left:false,right:false});checks++;
+   await setState(side);await touch(width/2,400,[[8*direction,2],[20*direction,4],[45*direction,5],[70*direction,6]]);
+   assert.deepEqual(await state(),{left:nativeOnly&&side==='left',right:nativeOnly&&side==='right'},'raw horizontal touch must close only in the standalone browser');checks++;
   }
  }
  for(const side of ['closed','left','right'])for(const x of [20,width/2,width-20]){
@@ -150,5 +166,5 @@ for(const width of [360,390,430,767]) {
  await cdp.detach();await page.evaluate(()=>window.cleanup());await page.close();
 }
 assert.deepEqual(errors,[]);
-console.log(JSON.stringify({hookName,checks,widths:[360,390,430,767],edgeOnlyOpen:true,bothDirectionsClose:true,verticalIntentPreserved:true,latestFrameFollowsFinger:true,nativeBack:true,memoryReturnLeft:true,cancelAndReversal:true}));
+console.log(JSON.stringify({hookName,checks,widths:[360,390,430,767],edgeOnlyOpen:true,bothDirectionsClose:true,verticalIntentPreserved:true,latestFrameFollowsFinger:true,androidSystemGesturesOnly:true,nativeBack:true,memoryReturnLeft:true,cancelAndReversal:true}));
 } finally {await browser.close();}
