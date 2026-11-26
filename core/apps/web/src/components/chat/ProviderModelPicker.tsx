@@ -30,6 +30,17 @@ import { takeOpenTarget, useComposerMenuProps } from "./composerEventScope";
 import { shortcutLabelForCommand } from "../../keybindings";
 import { serverEnvironment } from "../../state/server";
 import { useAtomCommand } from "../../state/use-atom-command";
+import * as React from "react";
+import { card, effortSlider } from "../../extensions/model-picker";
+import { isProviderInstancePickerReady } from "../../providerInstances";
+
+function WorkbenchModelCard(props: Parameters<typeof ProviderModelPicker>[0]) {
+  return card(React, props, isProviderInstancePickerReady);
+}
+
+function WorkbenchEffortSlider(props: { children: ReactNode }) {
+  return effortSlider(React, props.children);
+}
 
 /** Holds the page still behind the open picker; its lifetime is the popup element's. */
 function lockBackgroundScroll(popup: HTMLElement | null) {
@@ -452,7 +463,15 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
         padding="none"
         touchBackdrop
       >
-        {props.effortColumn ? (
+        {docked && props.selectedModels === undefined ? (
+          <DockedPickerContext value={{ modelLabel: triggerTitle }}>
+            <div className="cocloud-choice-layout">
+              <WorkbenchModelCard {...props} />
+              <WorkbenchEffortSlider key={`${activeInstanceId}:${props.model}`}>{props.effortColumn}</WorkbenchEffortSlider>
+              {props.footer}
+            </div>
+          </DockedPickerContext>
+        ) : props.effortColumn ? (
           <DockedPickerContext value={{ modelLabel: triggerTitle }}>
             <div className="flex max-h-(--available-height) flex-col">
               {/* One fixed height, so a model with more options never resizes the popup. Short

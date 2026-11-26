@@ -1,0 +1,111 @@
+[data-chat-composer-overlay="true"] > .chat-composer-lane {
+  background-color: var(--background);
+}
+
+@media(max-width:767px){
+/* Hide browser surfaces in the same frame as the conversation drawer. */
+html[data-workbench-sidebar-motion] [data-preview-panel-mode],
+html:has([data-sidebar=sidebar][data-mobile=true][data-side=left][data-open]) [data-preview-panel-mode]{visibility:hidden!important;pointer-events:none!important}
+[data-workbench-sidebar-backdrop],[data-workbench-tools-backdrop]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+[data-sidebar=sidebar][data-mobile=true][data-side=left],[data-workbench-tools][data-slot=sheet-popup]{backface-visibility:hidden;transition:transform 260ms cubic-bezier(.22,.8,.25,1)!important}
+html[data-workbench-sidebar-motion] [data-sidebar=sidebar][data-mobile=true][data-side=left],html[data-workbench-tools-motion] [data-workbench-tools][data-slot=sheet-popup]{transition:none!important}
+nav[data-workbench-tools]{transform:none!important;translate:none!important;will-change:auto!important}
+}
+@media(max-width:767px) and (prefers-reduced-motion:reduce){[data-sidebar=sidebar][data-mobile=true][data-side=left],[data-workbench-tools][data-slot=sheet-popup]{transition:none!important}}
+
+[data-memory-panel]{position:fixed;inset:0;z-index:2147483000;background:var(--background);width:100%;height:100dvh;pointer-events:auto}[data-memory-panel]>iframe{display:block;width:100%;height:100%;border:0;background:var(--background)}
+
+.memory-load-status{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--background);color:var(--foreground);padding:24px;font-size:13px}.memory-load-status[hidden]{display:none}.memory-load-status button{padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--secondary);color:var(--foreground)}
+
+.cocloud-proxy-switch{display:inline-flex;align-items:center;flex-shrink:0;width:36px;height:20px;padding:2px;border:0;border-radius:999px;cursor:pointer;transition:background-color .2s}
+.cocloud-proxy-switch:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.cocloud-proxy-switch:disabled{opacity:.5;cursor:not-allowed}
+.cocloud-proxy-switch-thumb{display:block;width:16px;height:16px;border-radius:999px;background:var(--background);box-shadow:0 1px 2px #0002;pointer-events:none;transition:transform .15s}
+@media(prefers-reduced-motion:reduce){.cocloud-proxy-switch,.cocloud-proxy-switch-thumb{transition:none}}
+
+.cocloud-connection-trigger:focus-visible{outline:2px solid var(--ring);outline-offset:3px;border-radius:6px}
+.cocloud-connection-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:2px 0 4px;font-size:11px;line-height:1.6}
+.cocloud-connection-summary-item{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;white-space:nowrap}
+.cocloud-connection-summary-item{min-height:44px;cursor:pointer}
+.cocloud-connection-summary-item small{display:block;font-size:10px;line-height:1.3;color:var(--muted-foreground);white-space:normal}
+.cocloud-connection-summary-item:focus-visible{outline:2px solid var(--ring);outline-offset:-2px;border-radius:4px}
+.cocloud-connection-icon{width:18px;height:18px;flex-shrink:0;color:var(--muted-foreground)}
+.cocloud-connection-summary-item[data-state=online] .cocloud-connection-icon{color:#16a34a}
+.cocloud-connection-summary-item[data-state=offline] .cocloud-connection-icon{color:#dc2626}
+.dark .cocloud-connection-summary-item[data-state=online] .cocloud-connection-icon{color:#4ade80}
+.dark .cocloud-connection-summary-item[data-state=offline] .cocloud-connection-icon{color:#f87171}
+span.cocloud-connection-summary-item{cursor:default}
+.cocloud-connection-glyph{position:relative;display:inline-flex}
+.cocloud-connection-summary-item[data-connection-kind=enterpriseWechat] .cocloud-connection-glyph .cocloud-connection-icon{color:#2585f4}
+[data-connection-kind=enterpriseWechat] .cocloud-connection-glyph::after{content:"";position:absolute;right:-2px;bottom:-1px;width:7px;height:7px;border-radius:50%;background:#9ca3af}
+[data-connection-kind=enterpriseWechat][data-state=online] .cocloud-connection-glyph::after{background:#16a34a}
+[data-connection-kind=enterpriseWechat][data-state=abnormal] .cocloud-connection-glyph::after{background:#dc2626}
+.cocloud-connection-count{font-variant-numeric:tabular-nums}
+.cocloud-connection-settings>section{border-top:1px solid var(--sidebar-border);padding:8px 0}
+.cocloud-connection-settings>[data-workbench-devices]{border:0;border-top:1px solid var(--sidebar-border);border-radius:0;background:transparent;padding:8px 0}
+
+.cocloud-file-properties { box-sizing:border-box; color:var(--foreground); background:var(--background); border:1px solid var(--border); border-radius:10px; padding:20px; width:460px; max-width:calc(100vw - 32px); max-height:85dvh; overflow:auto; box-shadow:0 12px 48px #0004; }
+.cocloud-file-properties::backdrop { background:#0006; }
+.cocloud-file-properties h2 { font-size:16px; font-weight:600; margin:0 0 16px; overflow-wrap:anywhere; }
+.cocloud-file-properties dl { display:grid; grid-template-columns:76px minmax(0,1fr); gap:12px; font-size:13px; }
+.cocloud-file-properties dt { opacity:.65; }
+.cocloud-file-properties dd { margin:0; overflow-wrap:anywhere; user-select:text; }
+.cocloud-file-properties button { display:block; margin:20px 0 0 auto; border:1px solid var(--border); border-radius:6px; padding:6px 22px; cursor:pointer; }
+/* Legacy host CSS also hides child 2. After ProjectFavicon returns null this is
+   the project title; select its text classes rather than its child position. */
+[data-testid="sidebar-project-folder"] button[data-sidebar-row^="folder:"] > span.min-w-0.flex-1.truncate{display:block!important}
+/* Keep the popup footprint stable as reasoning opens, so it stays above the composer. */
+.cocloud-model-popup {
+  inline-size: min(300px, calc(100dvw - 24px));
+  block-size: min(272px, var(--available-height, 100dvh), calc(100dvh - 24px));
+  max-inline-size: calc(100dvw - 24px);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cocloud-model-popup [data-model-picker-content] {
+  inline-size: 100%;
+  max-inline-size: none;
+  block-size: clamp(128px, 40dvh, 184px);
+  min-block-size: 0;
+  max-block-size: 184px;
+}
+.cocloud-picker-body { display: flex; min-block-size: 0; flex: 1; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; }
+.cocloud-picker-body > [data-model-picker-content] { flex-shrink: 0; }
+.cocloud-picker-effort { flex-shrink: 0; inline-size: 100%; border-block-start: 1px solid var(--border); background: var(--popover); }
+.cocloud-picker-effort > summary { min-block-size: 32px; padding: 6px 10px; cursor: pointer; font-size: 12px; color: var(--muted-foreground); }
+.cocloud-picker-effort > :not(summary) { max-block-size: 220px; overflow: auto; }
+.cocloud-model-loader { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 5px 8px; border-block-end: 1px solid var(--border); flex: none; }
+.cocloud-load-models { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-block-size: 30px; padding: 3px 6px; border-radius: 5px; color: var(--muted-foreground); font-size: 12px; }
+.cocloud-load-models:hover { color: var(--foreground); background: var(--accent); }
+.cocloud-load-models:disabled { opacity: .5; cursor: default; }
+.cocloud-load-models:focus-visible, .cocloud-picker-effort > summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.cocloud-model-message { font-size: 11px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.cocloud-model-message.is-error { color: var(--destructive); }
+.cocloud-model-popup:has(.cocloud-choice-layout){inline-size:min(360px,calc(100dvw - 20px));block-size:auto;max-block-size:min(480px,var(--available-height,90dvh));border-radius:8px}
+.cocloud-choice-layout{display:flex;flex-direction:column;min-height:0;color:var(--foreground)}
+.cocloud-choice-card{display:flex;flex-direction:column;min-height:60px;padding:10px;gap:6px}.cocloud-choice-card>strong{padding-inline:6px;font-size:13px}
+.cocloud-choice-list{overflow:auto;overscroll-behavior:contain}.cocloud-choice-list button{display:flex;align-items:center;justify-content:space-between;text-align:start;width:100%;gap:8px;padding:7px 9px;border:1px solid transparent;border-radius:6px;overflow-wrap:anywhere}.cocloud-choice-list button[aria-pressed=true]{border-color:var(--border);background:var(--secondary)}.cocloud-choice-list button:hover,.cocloud-choice-list button:focus-visible{background:var(--accent)}.cocloud-choice-list small{display:block;color:var(--muted-foreground);font-size:11px}
+.cocloud-effort-card{border-top:1px solid var(--border);flex:none;max-height:48dvh;overflow:auto}.cocloud-effort-card label{display:block;padding:8px 16px}.cocloud-effort-card label>span{display:flex;justify-content:space-between;gap:3px}.cocloud-effort-card input{width:100%;height:28px;accent-color:var(--primary)}.cocloud-effort-card output,.cocloud-effort-ticks{color:var(--muted-foreground)}.cocloud-effort-ticks{font-size:11px}.cocloud-effort-source.is-slider [role=radiogroup]:has([data-effort-level]),.cocloud-effort-source.is-slider>div:first-child{display:none}
+@media (pointer: coarse) {
+  .cocloud-load-models, .cocloud-picker-effort > summary { min-block-size: 40px; }
+}
+.cocloud-family-options{display:flex;gap:4px;padding-inline:4px}.cocloud-family-options button{flex:1;border:1px solid var(--border);border-radius:6px;padding:5px;font-size:13px}.cocloud-family-options button[aria-pressed=true]{background:var(--secondary);font-weight:600}.cocloud-family-options button:disabled{opacity:.5}
+[data-chat-composer-overlay="true"][style*="--cocloud-ime-lift"] { translate: 0 var(--cocloud-ime-lift); }
+.cocloud-thread-progress {position:relative;container-type:inline-size;flex:none;min-width:0;border-bottom:1px solid var(--border);font-size:.8125rem;color:var(--foreground)}
+.cocloud-thread-progress summary {position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:.25rem;width:4rem;min-height:2.875rem;cursor:pointer;font-variant-numeric:tabular-nums}
+.cocloud-thread-progress summary::before {content:'▸'}
+.cocloud-thread-progress[open] summary::before {content:'▾'}
+.cocloud-route {display:flex;list-style:none;overflow-x:auto;overscroll-behavior-x:contain;margin:-2.875rem 0 0 4rem;padding:0 .35rem;scrollbar-width:thin}
+.cocloud-route li {position:relative;flex:1 0 4.75rem;min-width:0;text-align:center}
+@container (min-width:38rem) {.cocloud-route li {flex-basis:7rem}}
+.cocloud-route li:not(:last-child)::before {content:'';position:absolute;top:.86rem;left:50%;width:100%;height:2px;background:var(--border);pointer-events:none}
+.cocloud-route button {position:relative;display:grid;justify-items:center;align-content:center;gap:.12rem;width:100%;min-height:2.875rem;padding:0 .25rem;color:inherit;cursor:pointer;border:0;background:transparent;font:inherit}
+.cocloud-stop {background:var(--background,Canvas);border-radius:50%;font-weight:700;line-height:1rem}
+.cocloud-route [data-state=running] .cocloud-stop {color:var(--primary,currentColor)}
+.cocloud-route [data-state=running],.cocloud-route [aria-expanded=true] {font-weight:650}
+.cocloud-route [aria-expanded=true] .cocloud-stop-label {text-decoration:underline;text-underline-offset:.16em}
+.cocloud-stop-label {max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1rem}
+.cocloud-route button:focus-visible {outline:2px solid currentColor;outline-offset:-3px}
+.cocloud-route-detail:not([hidden]) {margin:0 .75rem .4rem;padding:.4rem .65rem;border-inline-start:2px solid var(--primary,currentColor);background:var(--muted);overflow-wrap:anywhere;max-height:25dvh;overflow:auto;white-space:pre-wrap}

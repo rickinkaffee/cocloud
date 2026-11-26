@@ -11,6 +11,7 @@ import sys
 import zipfile
 import xml.etree.ElementTree as ET
 
+raise SystemExit("Android APK retired; use the web application")
 source = Path(__file__).resolve().parent
 toolchain = Path(sys.argv[1]).resolve()
 output = Path(sys.argv[2]).resolve()

@@ -1,0 +1,7455 @@
+{
+ "baseSHA256": "07cc38574019ee9ff503294bdaeb7c387d325ced709cd670600aa189f6a4ce79",
+ "outputSHA256": "1b8e9bed6061024735252c824b70686d6d12f3019c078db25c2c860b84be4833",
+ "edits": [
+  [
+   1,
+   0,
+   [
+    "/**",
+    " * Recently revoked credentials may terminate their MCP transport, but cannot",
+    " * authenticate any tool request. Keys are SHA-256 hashes supplied by the registry.",
+    " * The HTTP middleware must pass the actual request method, never a body field.",
+    " */",
+    "function createMcpTerminationLedger({ ttlMs = 120_000, capacity = 1024 } = {}) {",
+    "  const retired = new Map();",
+    "  const prune = (now) => {",
+    "    for (const [hash, entry] of retired) {",
+    "      if (entry.expiresAt <= now) retired.delete(hash);",
+    "    }",
+    "  };",
+    "  return {",
+    "    retire(hash, scope, now) {",
+    "      prune(now);",
+    "      // Repeated revocation must never extend the cleanup window.",
+    "      if (retired.has(hash)) return;",
+    "      while (retired.size >= capacity) retired.delete(retired.keys().next().value);",
+    "      retired.set(hash, { scope, expiresAt: now + ttlMs });",
+    "    },",
+    "    resolve(hash, method, now) {",
+    "      prune(now);",
+    "      if (method !== \"DELETE\") return undefined;",
+    "      return retired.get(hash)?.scope;",
+    "    },",
+    "  };",
+    "}",
+    ""
+   ]
+  ],
+  [
+   60508,
+   1,
+   [
+    "var WS_METHODS, WsServerUpsertKeybindingRpc, WsServerRemoveKeybindingRpc, WsServerProbeRpc, WsServerGetConfigRpc, WsServerRefreshProvidersRpc, WsServerUpdateProviderRpc, ProviderSetupRpcError, WsProviderSetSkillEnabledRpc, WsProviderConsumeResetCreditRpc, WsProviderAuthStartRpc, WsProviderAuthRespondRpc, WsProviderAuthCompleteRpc, WsChatGptReconnectProfileRpc, WsChatGptImportProfileRpc, WsChatGptHandoffSubscribeRpc, WsProviderAuthCancelRpc, WsProviderAuthRemoveMethodRpc, WsProviderAuthLogoutRpc, WsProviderAuthSubscribeRpc, WsProviderInstallStartRpc, WsProviderInstallCancelRpc, WsProviderInstallSubscribeRpc, WsProviderInstallRemoveRpc, WsServerGetNpmReleaseRpc, WsServerUpdateServerRpc, WsServerUpdateServerWithProgressRpc, WsServerCommitDesktopUpdateRpc, WsServerRunStorageCleanupRpc, WsServerGetStorageCleanupReportRpc, WsServerGetDatabaseStorageRpc, WsServerReclaimDatabaseSpaceRpc, WsPeerLinksListRpc, WsPeerLinksLinkRpc, WsPeerLinksUnlinkRpc, WsPeerLinksAnswerRequestRpc, WsServerUpdateSettingsRpc, WsServerDiscoverSourceControlRpc, WsServerSearchAcpRegistryRpc, WsServerPrepareAcpRegistryAgentRpc, WsServerUninstallAcpRegistryManagedBinaryRpc, WsServerAcceptAcpRegistryUrlAuthRpc, WsServerListAcpRegistrySessionsRpc, WsServerImportAcpRegistrySessionRpc, WsServerDeleteAcpRegistrySessionRpc, WsServerListAcpRegistryProvidersRpc, WsServerSetAcpRegistryProviderRpc, WsServerDisableAcpRegistryProviderRpc, WsServerLogoutAcpRegistryRpc, WsServerGetTraceDiagnosticsRpc, WsServerGetProcessDiagnosticsRpc, WsServerGetHostResourcesRpc, WsServerGetProcessResourceHistoryRpc, WsServerGetResourceTelemetryHistoryRpc, WsServerRetryResourceTelemetryRpc, WsServerCheckOtlpEndpointRpc, WsServerListTextGeneratorModelsRpc, WsServerPrepareTriageRpc, WsServerGetUsageSummaryRpc, WsServerRefreshUsageRatesRpc, WsServerSignalProcessRpc, WsCloudGetRelayClientStatusRpc, WsCloudInstallRelayClientRpc, WsServerReportClientActivityRpc, PullRequestRpcError, WsPullRequestsListRpc, WsPullRequestsListStatsRpc, WsPullRequestsFilterOptionsRpc, WsPullRequestsRoutingRpc, WsPullRequestsRoutingIdentityRpc, WsPullRequestsSummaryRpc, WsPullRequestsStackRpc, WsPullRequestsLinkedThreadsRpc, WsPullRequestsDetailRpc, WsPullRequestsPreviewRpc, WsPullRequestsChecksRpc, WsPullRequestsActivityRpc, WsPullRequestsReviewGuideRpc, WsPullRequestsGenerateReviewGuideRpc, WsPullRequestsThreadCommentsRpc, WsPullRequestsDiffFileContentsRpc, WsPullRequestsFilesViewedRpc, WsPullRequestsChangeBreakdownRpc, WsPullRequestsSetFilesViewedRpc, WsPullRequestsRunActionRpc, WsPullRequestsUpdateRpc, WsPullRequestsCommentRpc, WsPullRequestsUpdateCommentRpc, WsPullRequestsSubmitReviewRpc, WsPullRequestsReplyToThreadRpc, WsPullRequestsSetThreadResolutionRpc, WsPullRequestsSetReactionRpc, WsPullRequestsInvalidateRpc, WsPullRequestsReportStateRpc, WsPullRequestsSubscribeRefreshesRpc, WsPullRequestsReviewerCandidatesRpc, WsPullRequestsRequestReviewersRpc, WsPullRequestsLabelCandidatesRpc, WsPullRequestsSetLabelsRpc, WsSourceControlLookupRepositoryRpc, WsSourceControlCloneRepositoryRpc, WsSourceControlSignInStartRpc, WsSourceControlSignInWaitRpc, WsSourceControlSignInCancelRpc, WsSourceControlAppAccessRpc, WsSourceControlStarredRpc, WsSourceControlStarRpc, WsProjectCloneStartRpc, WsProjectCloneCancelRpc, WsProjectCloneRetryRpc, WsSubscribeProjectClonesRpc, WsSourceControlPublishRepositoryRpc, WsProjectsSearchEntriesRpc, WsProjectsSearchContentsRpc, WsProjectsListEntriesRpc, WsProjectsListIgnoredFilesRpc, WsProjectsReadFileRpc, WsProjectsWriteFileRpc, WsProjectsMutateRpc, WsProjectsEnsureScratchRpc, WsProjectsCreateNewRpc, WsProjectsCreateFromThreadRpc, WsShellOpenInEditorRpc, WsFilesystemGetMetadataRpc, WsFilesystemBrowseRpc, WsAgentSessionsScanRpc, WsAgentSessionsImportRpc, WsAssetsCreateUrlRpc, WsAssetsPersistChatAttachmentsRpc, WsAttachmentsCreateUploadUrlRpc, WsAttachmentsDeleteRpc, WsMcpAppsCallToolRpc, WsMcpAppsToolInfoRpc, WsMcpAppsUpdateModelContextRpc, WsMcpAppsReadResourceRpc, WsProviderUploadFeedbackRpc, WsSubscribeVcsBranchRpc, WsVcsRefreshBranchRpc, WsSubscribeVcsStatusRpc, WsVcsPullRpc, WsVcsRefreshStatusRpc, WsSubscribeWorktreeSetupRpc, WsWorktreeSetupCancelRpc, WsGitRunStackedActionRpc, WsGitResolvePullRequestRpc, WsGitPreparePullRequestThreadRpc, WsVcsListRefsRpc, WsVcsCreateWorktreeRpc, WsVcsRemoveWorktreeRpc, WsVcsCreateRefRpc, WsVcsSwitchRefRpc, WsVcsInitRpc, WsReviewGetBranchCommitsRpc, WsReviewGetDiffPreviewRpc, WsReviewGetDiffFileContentsRpc, WsTerminalOpenRpc, WsTerminalAttachRpc, WsTerminalObserveRpc, WsTerminalWriteRpc, WsTerminalResizeRpc, WsTerminalClearRpc, WsTerminalCloseRpc, WsPreviewOpenRpc, WsPreviewResizeRpc, WsPreviewAdjustRpc, WsPreviewCloseRpc, WsPreviewListRpc, WsPreviewClearProfileRpc, WsPreviewReportProfilesRpc, WsPreviewReportStatusRpc, WsSubscribePreviewEventsRpc, WsPreviewStopLocalServerRpc, WsSubscribeDiscoveredLocalServersRpc, WsDeviceTestHostRpc, WsDeviceEasAccountRpc, WsDeviceSimlockIdentityRpc, WsDeviceListRpc, WsDeviceConfigureRpc, WsDeviceOpenRpc, WsDeviceCloseRpc, WsDeviceShutdownRpc, WsDeviceDetailRpc, WsDeviceActionRpc, WsSubscribeDeviceStateRpc, WsOrchestrationV2DispatchCommandRpc, WsOrchestrationV2GetTurnDiffRpc, WsOrchestrationV2GetFullThreadDiffRpc, WsOrchestrationV2SearchThreadRpc, WsOrchestrationV2SearchThreadStreamRpc, WsOrchestrationV2SearchThreadsRpc, WsOrchestrationV2GetArchivedShellSnapshotRpc, WsOrchestrationV2GetThreadFamilyRpc, WsOrchestrationV2GetThreadTitlesRpc, WsOrchestrationV2GetThreadLinkMetadataRpc, WsOrchestrationV2GetWorktreeThreadIdsRpc, WsOrchestrationV2GetOlderSettledThreadsRpc, WsOrchestrationV2GetThreadProjectionRpc, WsOrchestrationV2StopWorkflowRpc, WsOrchestrationV2ForceStopThreadRpc, WsOrchestrationV2GetWorkflowScriptRpc, WsOrchestrationV2GetNativeChildWorkRpc, WsOrchestrationV2GetTurnItemRpc, WsOrchestrationV2LaunchThreadRpc, WsOrchestrationV2SubscribeShellRpc, WsOrchestrationV2SubscribeThreadRpc, WsOrchestrationV2SubscribeCommandOutputRpc, WsOrchestrationV2SubscribePromptSuggestionRpc, WsSubscribeTerminalMetadataRpc, WsSubscribeServerConfigRpc, WsSubscribeServerLifecycleRpc, WsScheduledTasksSubscribeRpc, WsScheduledTasksUpsertRpc, WsScheduledTasksSetEnabledRpc, WsScheduledTasksDeleteRpc, WsScheduledTasksRunNowRpc, WsScheduledTasksRotateWebhookTokenRpc, WsGuestShareCreateRpc, WsSecretsAnswerRequestRpc, WsScheduledTasksListWebhookDeliveriesRpc, WsScheduledTasksGetWebhookDeliveryRpc, WsSubscribeAuthAccessRpc, WsSubscribeResourceTelemetryRpc, RpcScopeAuthorization, WsRpcGroup;"
+   ]
+  ],
+  [
+   60638,
+   0,
+   [
+    "\t\tproviderSetSkillEnabled: \"provider.setSkillEnabled\","
+   ]
+  ],
+  [
+   60809,
+   0,
+   [
+    "\tWsProviderSetSkillEnabledRpc = make$242(WS_METHODS.providerSetSkillEnabled, {",
+    "\t\tpayload: Struct({",
+    "\t\t\tinstanceId: ProviderInstanceId,",
+    "\t\t\tcwd: optional$11(TrimmedNonEmptyString),",
+    "\t\t\tpath: TrimmedNonEmptyString,",
+    "\t\t\tenabled: Boolean$5",
+    "\t\t}),",
+    "\t\tsuccess: Struct({",
+    "\t\t\tproviders: ArraySchema(ServerProvider),",
+    "\t\t\tenabled: Boolean$5",
+    "\t\t}),",
+    "\t\terror: ProviderSetupRpcError",
+    "\t});"
+   ]
+  ],
+  [
+   61920,
+   1,
+   [
+    "\tWsRpcGroup = make$241(WsGuestShareCreateRpc, WsServerProbeRpc, WsServerGetConfigRpc, WsServerRefreshProvidersRpc, WsProviderSetSkillEnabledRpc, WsServerUpdateProviderRpc, WsProviderConsumeResetCreditRpc, WsProviderAuthStartRpc, WsProviderAuthCompleteRpc, WsChatGptReconnectProfileRpc, WsChatGptImportProfileRpc, WsChatGptHandoffSubscribeRpc, WsProviderAuthRespondRpc, WsProviderAuthCancelRpc, WsProviderAuthRemoveMethodRpc, WsProviderAuthLogoutRpc, WsProviderAuthSubscribeRpc, WsProviderInstallStartRpc, WsProviderInstallCancelRpc, WsProviderInstallSubscribeRpc, WsProviderInstallRemoveRpc, WsServerUpdateServerRpc, WsServerGetNpmReleaseRpc, WsServerUpdateServerWithProgressRpc, WsServerCommitDesktopUpdateRpc, WsServerUpsertKeybindingRpc, WsServerRemoveKeybindingRpc, WsServerRunStorageCleanupRpc, WsServerGetStorageCleanupReportRpc, WsServerGetDatabaseStorageRpc, WsServerReclaimDatabaseSpaceRpc, WsServerUpdateSettingsRpc, WsPeerLinksListRpc, WsPeerLinksLinkRpc, WsPeerLinksUnlinkRpc, WsPeerLinksAnswerRequestRpc, WsServerDiscoverSourceControlRpc, WsServerSearchAcpRegistryRpc, WsServerPrepareAcpRegistryAgentRpc, WsServerUninstallAcpRegistryManagedBinaryRpc, WsServerAcceptAcpRegistryUrlAuthRpc, WsServerListAcpRegistrySessionsRpc, WsServerImportAcpRegistrySessionRpc, WsServerDeleteAcpRegistrySessionRpc, WsServerListAcpRegistryProvidersRpc, WsServerSetAcpRegistryProviderRpc, WsServerDisableAcpRegistryProviderRpc, WsServerLogoutAcpRegistryRpc, WsServerGetTraceDiagnosticsRpc, WsServerGetProcessDiagnosticsRpc, WsServerGetHostResourcesRpc, WsServerGetProcessResourceHistoryRpc, WsServerGetResourceTelemetryHistoryRpc, WsServerRetryResourceTelemetryRpc, WsServerCheckOtlpEndpointRpc, WsServerListTextGeneratorModelsRpc, WsServerPrepareTriageRpc, WsServerGetUsageSummaryRpc, WsServerRefreshUsageRatesRpc, WsServerSignalProcessRpc, WsScheduledTasksSubscribeRpc, WsScheduledTasksUpsertRpc, WsScheduledTasksSetEnabledRpc, WsScheduledTasksDeleteRpc, WsScheduledTasksRunNowRpc, WsScheduledTasksRotateWebhookTokenRpc, WsSecretsAnswerRequestRpc, WsScheduledTasksListWebhookDeliveriesRpc, WsScheduledTasksGetWebhookDeliveryRpc, WsServerReportClientActivityRpc, WsCloudGetRelayClientStatusRpc, WsCloudInstallRelayClientRpc, WsPullRequestsListRpc, WsPullRequestsListStatsRpc, WsPullRequestsFilterOptionsRpc, WsPullRequestsSummaryRpc, WsPullRequestsRoutingRpc, WsPullRequestsRoutingIdentityRpc, WsPullRequestsStackRpc, WsPullRequestsLinkedThreadsRpc, WsPullRequestsDetailRpc, WsPullRequestsPreviewRpc, WsPullRequestsChecksRpc, WsPullRequestsActivityRpc, WsPullRequestsReviewGuideRpc, WsPullRequestsGenerateReviewGuideRpc, WsPullRequestsThreadCommentsRpc, WsPullRequestsDiffFileContentsRpc, WsPullRequestsFilesViewedRpc, WsPullRequestsChangeBreakdownRpc, WsPullRequestsSetFilesViewedRpc, WsPullRequestsRunActionRpc, WsPullRequestsUpdateRpc, WsPullRequestsCommentRpc, WsPullRequestsUpdateCommentRpc, WsPullRequestsSubmitReviewRpc, WsPullRequestsReplyToThreadRpc, WsPullRequestsSetThreadResolutionRpc, WsPullRequestsSetReactionRpc, WsPullRequestsInvalidateRpc, WsPullRequestsReportStateRpc, WsPullRequestsSubscribeRefreshesRpc, WsPullRequestsReviewerCandidatesRpc, WsPullRequestsRequestReviewersRpc, WsPullRequestsLabelCandidatesRpc, WsPullRequestsSetLabelsRpc, WsSourceControlLookupRepositoryRpc, WsSourceControlCloneRepositoryRpc, WsSourceControlPublishRepositoryRpc, WsSourceControlSignInStartRpc, WsSourceControlSignInWaitRpc, WsSourceControlSignInCancelRpc, WsSourceControlAppAccessRpc, WsSourceControlStarredRpc, WsSourceControlStarRpc, WsProjectCloneStartRpc, WsProjectCloneCancelRpc, WsProjectCloneRetryRpc, WsSubscribeProjectClonesRpc, WsProjectsListEntriesRpc, WsProjectsListIgnoredFilesRpc, WsProjectsReadFileRpc, WsProjectsSearchContentsRpc, WsProjectsSearchEntriesRpc, WsProjectsEnsureScratchRpc, WsProjectsCreateNewRpc, WsProjectsCreateFromThreadRpc, WsProjectsWriteFileRpc, WsProjectsMutateRpc, WsShellOpenInEditorRpc, WsFilesystemBrowseRpc, WsFilesystemGetMetadataRpc, WsAgentSessionsScanRpc, WsAgentSessionsImportRpc, WsAssetsCreateUrlRpc, WsAssetsPersistChatAttachmentsRpc, WsAttachmentsCreateUploadUrlRpc, WsAttachmentsDeleteRpc, WsMcpAppsCallToolRpc, WsMcpAppsToolInfoRpc, WsMcpAppsReadResourceRpc, WsMcpAppsUpdateModelContextRpc, WsProviderUploadFeedbackRpc, WsSubscribeVcsStatusRpc, WsSubscribeVcsBranchRpc, WsVcsRefreshBranchRpc, WsSubscribeWorktreeSetupRpc, WsWorktreeSetupCancelRpc, WsVcsPullRpc, WsVcsRefreshStatusRpc, WsGitRunStackedActionRpc, WsGitResolvePullRequestRpc, WsGitPreparePullRequestThreadRpc, WsVcsListRefsRpc, WsVcsCreateWorktreeRpc, WsVcsRemoveWorktreeRpc, WsVcsCreateRefRpc, WsVcsSwitchRefRpc, WsVcsInitRpc, WsReviewGetBranchCommitsRpc, WsReviewGetDiffPreviewRpc, WsReviewGetDiffFileContentsRpc, WsTerminalOpenRpc, WsTerminalAttachRpc, WsTerminalObserveRpc, WsTerminalWriteRpc, WsTerminalResizeRpc, WsTerminalClearRpc, WsTerminalCloseRpc, WsSubscribeTerminalMetadataRpc, WsPreviewOpenRpc, WsPreviewResizeRpc, WsPreviewAdjustRpc, WsPreviewCloseRpc, WsPreviewListRpc, WsPreviewClearProfileRpc, WsPreviewReportProfilesRpc, WsPreviewReportStatusRpc, WsSubscribePreviewEventsRpc, WsPreviewStopLocalServerRpc, WsSubscribeDiscoveredLocalServersRpc, WsDeviceConfigureRpc, WsDeviceListRpc, WsDeviceTestHostRpc, WsDeviceEasAccountRpc, WsDeviceSimlockIdentityRpc, WsDeviceOpenRpc, WsDeviceCloseRpc, WsDeviceShutdownRpc, WsDeviceDetailRpc, WsDeviceActionRpc, WsSubscribeDeviceStateRpc, WsSubscribeServerConfigRpc, WsSubscribeServerLifecycleRpc, WsSubscribeAuthAccessRpc, WsSubscribeResourceTelemetryRpc, WsOrchestrationV2DispatchCommandRpc, WsOrchestrationV2GetWorkflowScriptRpc, WsOrchestrationV2GetNativeChildWorkRpc, WsOrchestrationV2StopWorkflowRpc, WsOrchestrationV2ForceStopThreadRpc, WsOrchestrationV2GetTurnItemRpc, WsOrchestrationV2GetTurnDiffRpc, WsOrchestrationV2GetFullThreadDiffRpc, WsOrchestrationV2SearchThreadsRpc, WsOrchestrationV2SearchThreadRpc, WsOrchestrationV2SearchThreadStreamRpc, WsOrchestrationV2GetArchivedShellSnapshotRpc, WsOrchestrationV2GetThreadFamilyRpc, WsOrchestrationV2GetThreadTitlesRpc, WsOrchestrationV2GetThreadLinkMetadataRpc, WsOrchestrationV2GetWorktreeThreadIdsRpc, WsOrchestrationV2GetOlderSettledThreadsRpc, WsOrchestrationV2GetThreadProjectionRpc, WsOrchestrationV2LaunchThreadRpc, WsOrchestrationV2SubscribeShellRpc, WsOrchestrationV2SubscribeThreadRpc, WsOrchestrationV2SubscribeCommandOutputRpc, WsOrchestrationV2SubscribePromptSuggestionRpc).middleware(RpcScopeAuthorization);"
+   ]
+  ],
+  [
+   61942,
+   0,
+   [
+    "\t\t[WS_METHODS.providerSetSkillEnabled]: AuthProvidersManageScope,"
+   ]
+  ],
+  [
+   78155,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/internal/http.js"
+   ]
+  ],
+  [
+   78162,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/internal/stream.js"
+   ]
+  ],
+  [
+   78192,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeSink.js"
+   ]
+  ],
+  [
+   78285,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeStream.js"
+   ]
+  ],
+  [
+   78434,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeStream.js"
+   ]
+  ],
+  [
+   78438,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeHttpIncomingMessage.js"
+   ]
+  ],
+  [
+   78526,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeSink.js"
+   ]
+  ],
+  [
+   78530,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeSocket.js"
+   ]
+  ],
+  [
+   78789,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeSocket.js"
+   ]
+  ],
+  [
+   78803,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/internal/upgrade.js"
+   ]
+  ],
+  [
+   105175,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/initialize/content.js"
+   ]
+  ],
+  [
+   105236,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/initialize/document.js"
+   ]
+  ],
+  [
+   110853,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/initialize/flow.js"
+   ]
+  ],
+  [
+   110895,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/initialize/text.js"
+   ]
+  ],
+  [
+   111064,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/constructs.js"
+   ]
+  ],
+  [
+   111134,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/create-tokenizer.js"
+   ]
+  ],
+  [
+   111570,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/parse.js"
+   ]
+  ],
+  [
+   111622,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/postprocess.js"
+   ]
+  ],
+  [
+   111636,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/lib/preprocess.js"
+   ]
+  ],
+  [
+   111724,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark@4.0.2_patch_hash=_097d3935db1154dd89838a6517125f5d/node_modules/micromark/index.js"
+   ]
+  ],
+  [
+   116234,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/blockquote.js"
+   ]
+  ],
+  [
+   116262,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/break.js"
+   ]
+  ],
+  [
+   116293,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/code.js"
+   ]
+  ],
+  [
+   116338,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/delete.js"
+   ]
+  ],
+  [
+   116366,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/emphasis.js"
+   ]
+  ],
+  [
+   116394,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/footnote-reference.js"
+   ]
+  ],
+  [
+   116449,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/heading.js"
+   ]
+  ],
+  [
+   116477,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/html.js"
+   ]
+  ],
+  [
+   116507,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/revert.js"
+   ]
+  ],
+  [
+   116548,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/image-reference.js"
+   ]
+  ],
+  [
+   116583,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/image.js"
+   ]
+  ],
+  [
+   116612,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/inline-code.js"
+   ]
+  ],
+  [
+   116646,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/link-reference.js"
+   ]
+  ],
+  [
+   116678,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/link.js"
+   ]
+  ],
+  [
+   116706,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/list-item.js"
+   ]
+  ],
+  [
+   116809,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/list.js"
+   ]
+  ],
+  [
+   116849,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/paragraph.js"
+   ]
+  ],
+  [
+   116877,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/root.js"
+   ]
+  ],
+  [
+   116903,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/strong.js"
+   ]
+  ],
+  [
+   116982,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/table.js"
+   ]
+  ],
+  [
+   117038,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/table-row.js"
+   ]
+  ],
+  [
+   117095,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/table-cell.js"
+   ]
+  ],
+  [
+   117182,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/text.js"
+   ]
+  ],
+  [
+   117205,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/thematic-break.js"
+   ]
+  ],
+  [
+   117233,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/handlers/index.js"
+   ]
+  ],
+  [
+   117481,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/footer.js"
+   ]
+  ],
+  [
+   117636,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/state.js"
+   ]
+  ],
+  [
+   117870,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/lib/index.js"
+   ]
+  ],
+  [
+   117974,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-to-hast@13.2.1_p_f928fb11699f0fffa3b767ee341be0f9/node_modules/mdast-util-to-hast/index.js"
+   ]
+  ],
+  [
+   132535,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-gfm-tab_ff98480d90c394441b1dc9124d8bf536/node_modules/micromark-extension-gfm-table/dev/lib/edit-map.js"
+   ]
+  ],
+  [
+   132619,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-gfm-tab_ff98480d90c394441b1dc9124d8bf536/node_modules/micromark-extension-gfm-table/dev/lib/infer.js"
+   ]
+  ],
+  [
+   132654,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-gfm-tab_ff98480d90c394441b1dc9124d8bf536/node_modules/micromark-extension-gfm-table/dev/lib/syntax.js"
+   ]
+  ],
+  [
+   133425,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-gfm-tab_ff98480d90c394441b1dc9124d8bf536/node_modules/micromark-extension-gfm-table/dev/index.js"
+   ]
+  ],
+  [
+   140686,
+   1,
+   [
+    "\t\t\tconst now$203 = yield* now;"
+   ]
+  ],
+  [
+   140705,
+   1,
+   [
+    "\t\t\tconst markIsDue = mark !== void 0 && toEpochMillis(now$203) - Date.parse(mark.updated_at) >= toMillis$1(RETAINED_EVENT_HISTORY);"
+   ]
+  ],
+  [
+   140708,
+   1,
+   [
+    "\t\t\t\tif (throughSequence > prunedThrough) yield* writeMetadata(EVENT_LOG_PRUNED_THROUGH, throughSequence, now$203);"
+   ]
+  ],
+  [
+   140711,
+   1,
+   [
+    "\t\t\tif (mark === void 0 || markIsDue) yield* writeMetadata(EVENT_LOG_PRUNE_MARK, head, now$203);"
+   ]
+  ],
+  [
+   143887,
+   1,
+   [
+    "var version$1 = \"0.1.7\";"
+   ]
+  ],
+  [
+   144045,
+   1,
+   [
+    "})), DEFAULT_PORT, RuntimeMode, ServerConfig$1, make$191, otlpResource, layer$246, deriveServerPaths, ensureServerDirectories, makeTest$1, layerTest$6, resolveStaticDir;"
+   ]
+  ],
+  [
+   144058,
+   1,
+   []
+  ],
+  [
+   144074,
+   1,
+   [
+    "\t\t\t...releaseResourceAttributes(\"dev\", config.otelEnvironment.resourceAttributes),"
+   ]
+  ],
+  [
+   146335,
+   2,
+   [
+    "\t\t\t\tconst now$202 = toEpochMillis(yield* now);",
+    "\t\t\t\tconst recentFailures = retainRecentNativeTelemetryFailures(failures, now$202);"
+   ]
+  ],
+  [
+   146338,
+   1,
+   [
+    "\t\t\t\tfailures = [...recentFailures, now$202];"
+   ]
+  ],
+  [
+   148973,
+   1,
+   [
+    "\t\tconst devPath = yield* option(String$6(\"T3CODE_DEV_MANAGED_POLICY_PATH\")).pipe(orElseSucceed(() => none$2()));"
+   ]
+  ],
+  [
+   149055,
+   1,
+   [
+    "\t\t\tconst now$201 = toEpochMillis(yield* now);"
+   ]
+  ],
+  [
+   149064,
+   1,
+   [
+    "\t\t\t\treturn !options?.fresh && entry && (entry.expiresAt > now$201 || entry.inFlight) ? [entry, current] : [void 0, new Map(current).set(key, pending)];"
+   ]
+  ],
+  [
+   149083,
+   1,
+   [
+    "\t\t\t\t\t\texpiresAt: now$201 + toMillis$1(ttl)"
+   ]
+  ],
+  [
+   151139,
+   2,
+   [
+    "\t\t\t\tconst now$200 = yield* now;",
+    "\t\t\t\tconst nowMs = toEpochMillis(now$200);"
+   ]
+  ],
+  [
+   156945,
+   1,
+   [
+    "\t\t\tconst now$196 = yield* now;"
+   ]
+  ],
+  [
+   156950,
+   1,
+   [
+    "\t\t\t\texpiresAt: add$2(now$196, { milliseconds: toMillis$1(DESKTOP_BOOTSTRAP_TTL_HOURS) }),"
+   ]
+  ],
+  [
+   156955,
+   2,
+   [
+    "\t\t\tconst now$199 = yield* now;",
+    "\t\t\treturn (yield* pairingLinks.listActive({ now: now$199 })).map((row) => row.label ? {"
+   ]
+  ],
+  [
+   156993,
+   2,
+   [
+    "\t\t\tconst now$198 = yield* now;",
+    "\t\t\tconst expiresAt = add$2(now$198, { milliseconds: toMillis$1(ttl) });"
+   ]
+  ],
+  [
+   157011,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$198,"
+   ]
+  ],
+  [
+   157024,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$198,"
+   ]
+  ],
+  [
+   157030,
+   2,
+   [
+    "\t\t\tconst now$197 = yield* now;",
+    "\t\t\tif (yield* consumeRotatingDesktopToken(credential, now$197.epochMilliseconds)) return {"
+   ]
+  ],
+  [
+   157035,
+   1,
+   [
+    "\t\t\t\texpiresAt: add$2(now$197, { milliseconds: DESKTOP_BOOTSTRAP_TOKEN_WINDOW_MS })"
+   ]
+  ],
+  [
+   157045,
+   1,
+   [
+    "\t\t\t\tif (isGreaterThanOrEqualTo$2(now$197, grant.expiresAt)) {"
+   ]
+  ],
+  [
+   157092,
+   2,
+   [
+    "\t\t\t\tconsumedAt: now$197,",
+    "\t\t\t\tnow: now$197"
+   ]
+  ],
+  [
+   157110,
+   1,
+   [
+    "\t\t\tif (isGreaterThanOrEqualTo$2(now$197, matching.value.expiresAt)) return yield* new ExpiredBootstrapCredentialError({});"
+   ]
+  ],
+  [
+   157487,
+   1,
+   [
+    "var MalformedSessionTokenError, InvalidSessionTokenSignatureError, InvalidSessionTokenPayloadError, SessionTokenExpiredError, UnknownSessionTokenError, SessionTokenRevokedError, InvalidSessionExpirationClaimError, MalformedWebSocketTokenError, InvalidWebSocketTokenSignatureError, InvalidWebSocketTokenPayloadError, WebSocketTokenExpiredError, UnknownWebSocketSessionError, WebSocketSessionExpiredError, WebSocketSessionRevokedError, SessionCredentialInvalidError, isSessionCredentialInvalidError, sessionCredentialInternalErrorContext, SessionClaimsEncodingError, SessionCredentialIssueError, SessionCredentialVerificationError, WebSocketTokenIssueError, WebSocketTokenVerificationError, ActiveSessionsListError, SessionRevocationError, OtherSessionsRevocationError, SessionCredentialInternalError, SessionStore, SIGNING_SECRET_NAME$2, DEFAULT_SESSION_TTL, REMEMBERED_BROWSER_SESSION_TTL, DEFAULT_WEBSOCKET_TOKEN_TTL, SessionClaims$1, WebSocketClaims, decodeSessionClaims$1, decodeWebSocketClaims, make$174, layer$231;"
+   ]
+  ],
+  [
+   157693,
+   0,
+   [
+    "\tREMEMBERED_BROWSER_SESSION_TTL = days(36500);"
+   ]
+  ],
+  [
+   157775,
+   2,
+   [
+    "\t\t\tconst now$195 = yield* now;",
+    "\t\t\tif (!connected && row.value.expiresAt.epochMilliseconds <= now$195.epochMilliseconds) return none$2();"
+   ]
+  ],
+  [
+   157815,
+   1,
+   [
+    "\t\t\tconst defaultTtl = input?.method === void 0 || input.method === \"browser-session-cookie\" ? REMEMBERED_BROWSER_SESSION_TTL : DEFAULT_SESSION_TTL;",
+    "\t\t\tconst expiresAt = add$2(issuedAt, { milliseconds: toMillis$1(input?.ttl ?? defaultTtl) });"
+   ]
+  ],
+  [
+   158107,
+   2,
+   [
+    "\t\t\t\t\tconst now$193 = yield* now;",
+    "\t\t\t\t\tconst remaining = current.expiresAt.epochMilliseconds - now$193.epochMilliseconds;"
+   ]
+  ],
+  [
+   160877,
+   1,
+   [
+    "\t\tconst now$192 = yield* now;"
+   ]
+  ],
+  [
+   160882,
+   1,
+   [
+    "\t\t\tnowEpochSeconds: Math.floor(now$192.epochMilliseconds / 1e3),"
+   ]
+  ],
+  [
+   160899,
+   1,
+   [
+    "\t\t\t`consumedAt=${formatIso(now$192)}`"
+   ]
+  ],
+  [
+   163157,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeRuntime.js"
+   ]
+  ],
+  [
+   163178,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeRuntime.js"
+   ]
+  ],
+  [
+   163227,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeCrypto.js"
+   ]
+  ],
+  [
+   163340,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeCrypto.js"
+   ]
+  ],
+  [
+   163344,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/internal/nodeChildProcessSpawner.js"
+   ]
+  ],
+  [
+   163357,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/internal/utils.js"
+   ]
+  ],
+  [
+   163395,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeChildProcessSpawner.js"
+   ]
+  ],
+  [
+   163910,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeChildProcessSpawner.js"
+   ]
+  ],
+  [
+   163914,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeFileSystem.js"
+   ]
+  ],
+  [
+   164340,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeFileSystem.js"
+   ]
+  ],
+  [
+   164382,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodePath.js"
+   ]
+  ],
+  [
+   164389,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeStdio.js"
+   ]
+  ],
+  [
+   164435,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeStdio.js"
+   ]
+  ],
+  [
+   164441,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeTerminal.js"
+   ]
+  ],
+  [
+   164577,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeTerminal.js"
+   ]
+  ],
+  [
+   164583,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeServices.js"
+   ]
+  ],
+  [
+   165493,
+   1,
+   [
+    "\t\t\tconst now$190 = yield* now;"
+   ]
+  ],
+  [
+   165499,
+   3,
+   [
+    "\t\t\t\tlinkedAt: now$190,",
+    "\t\t\t\texpiresAt: add$2(now$190, { seconds: issued.expires_in }),",
+    "\t\t\t\tlastReachedAt: now$190,"
+   ]
+  ],
+  [
+   165516,
+   1,
+   [
+    "          ${formatIso(now$190)}, NULL, 1"
+   ]
+  ],
+  [
+   165568,
+   2,
+   [
+    "\t\t\tconst now$191 = yield* now;",
+    "\t\t\treturn yield* forEach$1(links, (link) => statusOf(link, now$191), { concurrency: \"unbounded\" });"
+   ]
+  ],
+  [
+   166692,
+   3,
+   [
+    "\tbuildTimeRelayUrl = normalizeSecureRelayUrl(\"\") ?? \"\";",
+    "\tbuildTimeClerkPublishableKey = readBuildTimeValue(\"\");",
+    "\tbuildTimeClerkCliOAuthClientId = readBuildTimeValue(\"\");"
+   ]
+  ],
+  [
+   166696,
+   3,
+   [
+    "\t\ttracesUrl: readBuildTimeValue(\"\"),",
+    "\t\ttracesDataset: readBuildTimeValue(\"\"),",
+    "\t\ttracesToken: readBuildTimeValue(\"\")"
+   ]
+  ],
+  [
+   168657,
+   2,
+   [
+    "\t\t\t\tconst now$189 = yield* now;",
+    "\t\t\t\tconst nowIso = formatIso(now$189);"
+   ]
+  ],
+  [
+   168680,
+   1,
+   [
+    "                ${formatIso(effect.availableAt ?? now$189)},"
+   ]
+  ],
+  [
+   168719,
+   1,
+   [
+    "\t\t\t\tconst now$186 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   168725,
+   2,
+   [
+    "              completed_at = ${now$186},",
+    "              updated_at = ${now$186},"
+   ]
+  ],
+  [
+   168757,
+   1,
+   [
+    "\t\t\t\tconst now$183 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   168763,
+   2,
+   [
+    "            completed_at = ${now$183},",
+    "            updated_at = ${now$183},"
+   ]
+  ],
+  [
+   168775,
+   2,
+   [
+    "            available_at = ${now$183},",
+    "            updated_at = ${now$183},"
+   ]
+  ],
+  [
+   168792,
+   2,
+   [
+    "\t\t\t\tconst now$187 = yield* now;",
+    "\t\t\t\tconst nowIso = formatIso(now$187);"
+   ]
+  ],
+  [
+   168837,
+   1,
+   [
+    "\t\t\t\tconst now$188 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   168843,
+   2,
+   [
+    "              completed_at = ${now$188},",
+    "              updated_at = ${now$188},"
+   ]
+  ],
+  [
+   168863,
+   3,
+   [
+    "\t\t\t\tconst now$185 = yield* now;",
+    "\t\t\t\tconst nowIso = formatIso(now$185);",
+    "\t\t\t\tconst availableAt = formatIso(add$2(now$185, { milliseconds: Math.max(0, delayMs) }));"
+   ]
+  ],
+  [
+   168890,
+   1,
+   [
+    "\t\t\t\tconst now$184 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   168896,
+   2,
+   [
+    "              completed_at = ${now$184},",
+    "              updated_at = ${now$184},"
+   ]
+  ],
+  [
+   169417,
+   1,
+   [
+    "\t\t\t\tconst now$182 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   169429,
+   1,
+   [
+    "              ${now$182}"
+   ]
+  ],
+  [
+   170368,
+   1,
+   [
+    "\t\t\tconst now$180 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   170438,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: dateTime$1(now$180),"
+   ]
+  ],
+  [
+   170531,
+   1,
+   [
+    "              ${now$180},"
+   ]
+  ],
+  [
+   170615,
+   1,
+   [
+    "\t\t\tconst now$181 = formatIso(yield* now);"
+   ]
+  ],
+  [
+   170619,
+   1,
+   [
+    "            transcript_imported_at = ${now$181},"
+   ]
+  ],
+  [
+   171163,
+   1,
+   [
+    "\t\t\t\tconst now$179 = yield* now;"
+   ]
+  ],
+  [
+   171172,
+   1,
+   [
+    "\t\t\t\t\tnow: now$179"
+   ]
+  ],
+  [
+   171179,
+   1,
+   [
+    "\t\t\t\t\t\tacceptedAt: now$179,"
+   ]
+  ],
+  [
+   171188,
+   1,
+   [
+    "\t\t\t\t\trejectedAt: now$179,"
+   ]
+  ],
+  [
+   171301,
+   1,
+   [
+    "\t\t\tconst now$178 = yield* now;"
+   ]
+  ],
+  [
+   171306,
+   1,
+   [
+    "\t\t\t\tnow: now$178,"
+   ]
+  ],
+  [
+   171313,
+   1,
+   [
+    "\t\t\t\tacceptedAt: now$178,"
+   ]
+  ],
+  [
+   173044,
+   1,
+   [
+    "\t\t\t\tconst now$177 = yield* now;"
+   ]
+  ],
+  [
+   173047,
+   1,
+   [
+    "\t\t\t\t\tstartedAtMs: toEpochMillis(now$177)"
+   ]
+  ],
+  [
+   173057,
+   2,
+   [
+    "\t\t\t\tconst now$176 = yield* now;",
+    "\t\t\t\tconst durationMs = Math.max(0, toEpochMillis(now$176) - started.startedAtMs);"
+   ]
+  ],
+  [
+   176766,
+   1,
+   [
+    "\t\t\t\t\t\tconst onlyEmptyWorkspace = remaining.stdout.trim() === \"Would remove ./\" && (yield* fileSystem.readDirectory(input.cwd).pipe(map$11((entries) => entries.length === 0), orElseSucceed(() => false)));",
+    "\t\t\t\t\t\tif (/^Would remove /m.test(remaining.stdout) && !onlyEmptyWorkspace) {"
+   ]
+  ],
+  [
+   179831,
+   1,
+   [
+    "\t\t\tconst now$175 = toEpochMillis(yield* now);"
+   ]
+  ],
+  [
+   179833,
+   1,
+   [
+    "\t\t\tif (textGeneratorCannotRun || selected?.enabled === true && selected.status === \"error\" && (!selected.installed || selected.auth.status === \"unauthenticated\") || exhaustedUsageWindow(selected, now$175, selection.model)) {"
+   ]
+  ],
+  [
+   179841,
+   1,
+   [
+    "\t\t\t\t\treturn instanceId !== selection.instanceId && provider?.enabled === true && resolveProjectProviderInstanceEnabled(settings, null, instanceId) && provider.installed && provider.auth.status !== \"unauthenticated\" && provider.status !== \"error\" && isProviderAvailable(provider) && isProviderTextGenerationCapable(provider) && (operation !== \"generateReviewGuide\" || INVESTIGATING_DRIVERS.has(driver)) && !exhaustedUsageWindow(provider, now$175, defaultTextGenerationModel(driver));"
+   ]
+  ],
+  [
+   198237,
+   1,
+   [
+    "\t\t\t\t\tconst now$163 = yield* now;"
+   ]
+  ],
+  [
+   198270,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$163"
+   ]
+  ],
+  [
+   198302,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$163,",
+    "\t\t\t\t\t\t\tupdatedAt: now$163,"
+   ]
+  ],
+  [
+   198343,
+   1,
+   [
+    "\t\t\t\t\tconst now$161 = yield* now;"
+   ]
+  ],
+  [
+   198370,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$161 : null"
+   ]
+  ],
+  [
+   198388,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$161"
+   ]
+  ],
+  [
+   198413,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: completed ? now$161 : null,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$161,"
+   ]
+  ],
+  [
+   198437,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: completed ? now$161 : null,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$161,"
+   ]
+  ],
+  [
+   198464,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$161 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$161,"
+   ]
+  ],
+  [
+   198508,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$152 = yield* now;"
+   ]
+  ],
+  [
+   198511,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$152,"
+   ]
+  ],
+  [
+   198531,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$158 = yield* now;"
+   ]
+  ],
+  [
+   198534,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$158,"
+   ]
+  ],
+  [
+   198551,
+   1,
+   [
+    "\t\t\t\t\tconst now$166 = yield* now;"
+   ]
+  ],
+  [
+   198568,
+   1,
+   [
+    "\t\t\t\t\t\tnow: now$166"
+   ]
+  ],
+  [
+   198637,
+   1,
+   [
+    "\t\t\t\t\tconst now$170 = yield* now;"
+   ]
+  ],
+  [
+   198639,
+   1,
+   [
+    "\t\t\t\t\tconst startedAt = context.toolStartedAt.get(key) ?? now$170;"
+   ]
+  ],
+  [
+   198662,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completedAtForStatus(status, now$170),",
+    "\t\t\t\t\t\t\tupdatedAt: now$170,"
+   ]
+  ],
+  [
+   198698,
+   1,
+   [
+    "\t\t\t\t\tconst now$167 = yield* now;"
+   ]
+  ],
+  [
+   198731,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$167"
+   ]
+  ],
+  [
+   198736,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: acpSubagentStatusIsTerminal(taskStatus) ? now$167 : null,",
+    "\t\t\t\t\t\tupdatedAt: now$167"
+   ]
+  ],
+  [
+   198783,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tnow: now$167,"
+   ]
+  ],
+  [
+   198805,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$167"
+   ]
+  ],
+  [
+   198834,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$167"
+   ]
+  ],
+  [
+   198862,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: acpSubagentStatusIsTerminal(taskStatus) ? now$167 : null,",
+    "\t\t\t\t\t\tupdatedAt: now$167"
+   ]
+  ],
+  [
+   198930,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$167,"
+   ]
+  ],
+  [
+   199060,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tconst now$160 = yield* now;"
+   ]
+  ],
+  [
+   199077,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tnow: now$160"
+   ]
+  ],
+  [
+   199329,
+   1,
+   [
+    "\t\t\t\t\tconst now$171 = yield* now;"
+   ]
+  ],
+  [
+   199339,
+   1,
+   [
+    "\t\t\t\t\tconst startedAt = context.toolStartedAt.get(toolCall.toolCallId) ?? now$171;"
+   ]
+  ],
+  [
+   199341,
+   1,
+   [
+    "\t\t\t\t\tconst completedAt = completedAtForStatus(status, now$171);"
+   ]
+  ],
+  [
+   199378,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$171"
+   ]
+  ],
+  [
+   199589,
+   1,
+   [
+    "\t\t\t\t\tconst now$155 = yield* now;"
+   ]
+  ],
+  [
+   199611,
+   3,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$155,",
+    "\t\t\t\t\t\t\tcompletedAt: now$155,",
+    "\t\t\t\t\t\t\tupdatedAt: now$155"
+   ]
+  ],
+  [
+   199623,
+   1,
+   [
+    "\t\t\t\t\tconst now$172 = yield* now;"
+   ]
+  ],
+  [
+   199632,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$172,"
+   ]
+  ],
+  [
+   199699,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$172 : null"
+   ]
+  ],
+  [
+   199723,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$172 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$172,"
+   ]
+  ],
+  [
+   199741,
+   1,
+   [
+    "\t\t\t\t\tconst now$159 = yield* now;"
+   ]
+  ],
+  [
+   199763,
+   2,
+   [
+    "\t\t\t\t\t\t\tcreatedAt: previous?.createdAt ?? now$159,",
+    "\t\t\t\t\t\t\tupdatedAt: now$159"
+   ]
+  ],
+  [
+   200033,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$174 = yield* now;"
+   ]
+  ],
+  [
+   200038,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tupdatedAt: now$174"
+   ]
+  ],
+  [
+   200339,
+   1,
+   [
+    "\t\t\t\t\tconst now$164 = yield* now;"
+   ]
+  ],
+  [
+   200359,
+   1,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$164,"
+   ]
+  ],
+  [
+   200376,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$164,"
+   ]
+  ],
+  [
+   200391,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$164,"
+   ]
+  ],
+  [
+   200393,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$164,"
+   ]
+  ],
+  [
+   200450,
+   1,
+   [
+    "\t\t\t\t\tconst now$173 = yield* now;"
+   ]
+  ],
+  [
+   200474,
+   1,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$173,"
+   ]
+  ],
+  [
+   200491,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$173,"
+   ]
+  ],
+  [
+   200506,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$173,"
+   ]
+  ],
+  [
+   200508,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$173,"
+   ]
+  ],
+  [
+   200579,
+   1,
+   [
+    "\t\t\t\t\tconst now$165 = yield* now;"
+   ]
+  ],
+  [
+   200589,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tresolvedAt: now$165"
+   ]
+  ],
+  [
+   200598,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$165"
+   ]
+  ],
+  [
+   200607,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$165,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$165"
+   ]
+  ],
+  [
+   200617,
+   1,
+   [
+    "\t\t\t\t\tconst now$154 = yield* now;"
+   ]
+  ],
+  [
+   200619,
+   1,
+   [
+    "\t\t\t\t\tconst completedAt = acpSubagentStatusIsTerminal(status) ? now$154 : null;"
+   ]
+  ],
+  [
+   200625,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$154"
+   ]
+  ],
+  [
+   201531,
+   1,
+   [
+    "\t\t\t\t\tconst now$153 = yield* now;"
+   ]
+  ],
+  [
+   201564,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$153,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$153"
+   ]
+  ],
+  [
+   201569,
+   1,
+   [
+    "\t\t\t\t\tconst turn = providerTurnPayload(context, settledStatus, now$153);"
+   ]
+  ],
+  [
+   201589,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$153"
+   ]
+  ],
+  [
+   202188,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$169 = yield* now;"
+   ]
+  ],
+  [
+   202202,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tnow: now$169"
+   ]
+  ],
+  [
+   202243,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$162 = yield* now;"
+   ]
+  ],
+  [
+   202248,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tupdatedAt: now$162"
+   ]
+  ],
+  [
+   202537,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$168 = yield* now;"
+   ]
+  ],
+  [
+   202543,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tupdatedAt: now$168"
+   ]
+  ],
+  [
+   202572,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$156 = yield* now;"
+   ]
+  ],
+  [
+   202587,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tupdatedAt: now$156"
+   ]
+  ],
+  [
+   202628,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$157 = yield* now;"
+   ]
+  ],
+  [
+   202642,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tnow: now$157"
+   ]
+  ],
+  [
+   204750,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-math@3.0.0_patch_0baae03550b544b8b7d0098b300fd8e5/node_modules/mdast-util-math/lib/index.js"
+   ]
+  ],
+  [
+   204985,
+   1,
+   [
+    "// ../../node_modules/.pnpm/mdast-util-math@3.0.0_patch_0baae03550b544b8b7d0098b300fd8e5/node_modules/mdast-util-math/index.js"
+   ]
+  ],
+  [
+   204989,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/lib/math-flow.js"
+   ]
+  ],
+  [
+   205331,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/lib/math-text.js"
+   ]
+  ],
+  [
+   205548,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/lib/math-tex-flow.js"
+   ]
+  ],
+  [
+   205851,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/lib/math-tex-text.js"
+   ]
+  ],
+  [
+   206002,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/lib/syntax.js"
+   ]
+  ],
+  [
+   206031,
+   1,
+   [
+    "// ../../node_modules/.pnpm/micromark-extension-llm-mat_55232893f4f099113ed088368cd57847/node_modules/micromark-extension-llm-math/dev/index.js"
+   ]
+  ],
+  [
+   217592,
+   1,
+   [
+    "\t\t\t\tconst now$151 = yield* currentTimeMillis;"
+   ]
+  ],
+  [
+   217595,
+   1,
+   [
+    "\t\t\t\tif (cached?.fingerprint !== fingerprint || cached.expiresAt <= now$151 + 6e4) {"
+   ]
+  ],
+  [
+   217609,
+   1,
+   [
+    "\t\t\t\t\t\texpiresAt: now$151 + refreshed.expires_in * 1e3"
+   ]
+  ],
+  [
+   220611,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@anthropic-ai+claude-agent-_38f3fb20daecd36772d693f4f262e843/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs"
+   ]
+  ],
+  [
+   272909,
+   1,
+   [
+    "\t\t\t\tconst now$132 = yield* now;"
+   ]
+  ],
+  [
+   272915,
+   1,
+   [
+    "\t\t\t\t\tnow: now$132"
+   ]
+  ],
+  [
+   273134,
+   2,
+   [
+    "\t\t\t\t\tconst now$141 = yield* now;",
+    "\t\t\t\t\tif (requestStarted && context.streamUsage !== null) context.streamUsage.requestedAt = now$141;"
+   ]
+  ],
+  [
+   273141,
+   2,
+   [
+    "\t\t\t\t\t\tupdatedAt: formatIso(now$141)",
+    "\t\t\t\t\t} : claudeProviderTurnTokenUsage(usage, maxTokens, formatIso(now$141), context.autoCompactWindow, context.streamUsage?.requestedAt);"
+   ]
+  ],
+  [
+   273248,
+   1,
+   [
+    "\t\t\t\t\tconst now$136 = yield* now;"
+   ]
+  ],
+  [
+   273255,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$136"
+   ]
+  ],
+  [
+   273558,
+   1,
+   [
+    "\t\t\t\t\tconst now$134 = yield* now;"
+   ]
+  ],
+  [
+   273584,
+   3,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$134,",
+    "\t\t\t\t\t\t\tcompletedAt: now$134,",
+    "\t\t\t\t\t\t\tupdatedAt: now$134"
+   ]
+  ],
+  [
+   273654,
+   1,
+   [
+    "\t\t\t\t\tconst now$140 = yield* now;"
+   ]
+  ],
+  [
+   273668,
+   3,
+   [
+    "\t\t\t\t\t\tconst createdAt = previous?.createdAt ?? now$140;",
+    "\t\t\t\t\t\tconst startedAt = status === \"pending\" ? null : member.startedAt !== void 0 ? makeUnsafe$11(member.startedAt) : (restarted ? null : previous?.startedAt) ?? (status === \"running\" ? now$140 : null);",
+    "\t\t\t\t\t\tconst completedAt = settled ? member.completedAt !== void 0 ? makeUnsafe$11(member.completedAt) : (restarted ? null : previous?.completedAt) ?? now$140 : null;"
+   ]
+  ],
+  [
+   273712,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$140"
+   ]
+  ],
+  [
+   273737,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$140"
+   ]
+  ],
+  [
+   273791,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$140"
+   ]
+  ],
+  [
+   273802,
+   1,
+   [
+    "\t\t\t\t\t\tlet lastReadAt = now$140;"
+   ]
+  ],
+  [
+   273854,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tnow: now$140"
+   ]
+  ],
+  [
+   273924,
+   1,
+   [
+    "\t\t\t\t\tconst now$135 = yield* now;"
+   ]
+  ],
+  [
+   273965,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$135"
+   ]
+  ],
+  [
+   273976,
+   3,
+   [
+    "\t\t\t\t\t\t...isReopen ? { startedAt: now$135 } : {},",
+    "\t\t\t\t\t\tcompletedAt: input.status === \"running\" ? null : priorTask?.completedAt ?? now$135,",
+    "\t\t\t\t\t\tupdatedAt: now$135"
+   ]
+  ],
+  [
+   274033,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$135,"
+   ]
+  ],
+  [
+   274106,
+   1,
+   [
+    "\t\t\t\t\t\tnow: now$135"
+   ]
+  ],
+  [
+   274160,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$135"
+   ]
+  ],
+  [
+   274643,
+   1,
+   [
+    "\t\t\t\t\tconst now$142 = yield* now;"
+   ]
+  ],
+  [
+   274651,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tresolvedAt: now$142"
+   ]
+  ],
+  [
+   274660,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$142"
+   ]
+  ],
+  [
+   274669,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$142,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$142"
+   ]
+  ],
+  [
+   274690,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$137 = yield* now;"
+   ]
+  ],
+  [
+   274717,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: update.completed ? now$137 : null,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$137"
+   ]
+  ],
+  [
+   274947,
+   1,
+   [
+    "\t\t\t\t\tconst now$146 = yield* now;"
+   ]
+  ],
+  [
+   274956,
+   2,
+   [
+    "\t\t\t\t\t\tstartedAt: now$146,",
+    "\t\t\t\t\t\tcompletedAt: now$146"
+   ]
+  ],
+  [
+   275053,
+   1,
+   [
+    "\t\t\t\t\tconst now$143 = yield* now;"
+   ]
+  ],
+  [
+   275060,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$143"
+   ]
+  ],
+  [
+   275091,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$145 = yield* now;"
+   ]
+  ],
+  [
+   275103,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tstartedAt: now$145,"
+   ]
+  ],
+  [
+   275105,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tupdatedAt: now$145"
+   ]
+  ],
+  [
+   275256,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$139 = yield* now;"
+   ]
+  ],
+  [
+   275259,
+   1,
+   [
+    "\t\t\t\t\t\t\tcheckedAt: formatIso(now$139)"
+   ]
+  ],
+  [
+   275284,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tconst notice = describeClaudeUsageLimit(rateLimitInfo, toEpochMillis(now$139), names);"
+   ]
+  ],
+  [
+   275309,
+   3,
+   [
+    "\t\t\t\t\t\t\t\t\t\tstartedAt: now$139,",
+    "\t\t\t\t\t\t\t\t\t\tcompletedAt: now$139,",
+    "\t\t\t\t\t\t\t\t\t\tupdatedAt: now$139"
+   ]
+  ],
+  [
+   275497,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst now$147 = yield* now;"
+   ]
+  ],
+  [
+   275503,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$147,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$147"
+   ]
+  ],
+  [
+   275520,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$148 = yield* now;"
+   ]
+  ],
+  [
+   275543,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$148,"
+   ]
+  ],
+  [
+   275545,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$148"
+   ]
+  ],
+  [
+   275580,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: compaction.completedAt ?? now$148,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$148,"
+   ]
+  ],
+  [
+   275590,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$149 = yield* now;"
+   ]
+  ],
+  [
+   275617,
+   3,
+   [
+    "\t\t\t\t\t\t\t\tstartedAt: now$149,",
+    "\t\t\t\t\t\t\t\tcompletedAt: now$149,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$149"
+   ]
+  ],
+  [
+   275666,
+   2,
+   [
+    "\t\t\t\t\t\tconst now$144 = yield* now;",
+    "\t\t\t\t\t\tyield* completeProviderRetry(context, now$144);"
+   ]
+  ],
+  [
+   275969,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$138 = yield* now;"
+   ]
+  ],
+  [
+   275980,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$138"
+   ]
+  ],
+  [
+   276432,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$133 = yield* now;"
+   ]
+  ],
+  [
+   276439,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$133"
+   ]
+  ],
+  [
+   276448,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$133,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$133"
+   ]
+  ],
+  [
+   276458,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tresolvedAt: now$133"
+   ]
+  ],
+  [
+   277301,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$131 = yield* now;"
+   ]
+  ],
+  [
+   277315,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\t\tnow: now$131"
+   ]
+  ],
+  [
+   277335,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tupdatedAt: now$131"
+   ]
+  ],
+  [
+   277371,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$150 = yield* now;"
+   ]
+  ],
+  [
+   277388,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$150"
+   ]
+  ],
+  [
+   301523,
+   1,
+   [
+    "var isCodexAppServerSpawnError, RATE_LIMITS_PROBE_TIMEOUT_MS, CodexSkillNotFoundError, CODEX_APP_SERVER_PROBE_FORCE_KILL_AFTER, CODEX_CATALOG_REFRESH_TIMEOUT_MS, CODEX_CONFIG_PROBE_TIMEOUT_MS, CODEX_CATALOG_REFRESH_POLL, CODEX_CLIENT_NAME, CODEX_AUTH_PROBE_TIMEOUT_MS, CODEX_DISCOVERY_MARGIN_MS, CODEX_CLI_VERSION_PATTERN, CODEX_PRESENTATION, REASONING_EFFORT_LABELS$1, DEFAULT_SERVICE_TIER_ID, SERVICE_TIER_DESCRIPTIONS, requestAllCodexModels, decodeCodexModelsCacheStamp, readCodexModelsCacheFetchedAt, withCodexDiscoveryDeadline, requestCodexChatGptModels, codexAppServerEnvironment, codexProcessEnvironment, withCodexAppServerClient, probeCodexAppServerProvider, probeCodexCliVersion, probeCodexSkillsForCwd, setCodexSkillEnabled, writeCodexSkillEnabled, emptyCodexModelsFromSettings, makePendingCodexProvider, checkCodexProviderStatus;"
+   ]
+  ],
+  [
+   301552,
+   0,
+   [
+    "\tCodexSkillNotFoundError = class extends TaggedError()(\"CodexSkillNotFoundError\", {}) {",
+    "\t\tget message() {",
+    "\t\t\treturn \"The skill is no longer installed in this workspace.\";",
+    "\t\t}",
+    "\t};"
+   ]
+  ],
+  [
+   301709,
+   0,
+   [
+    "\tsetCodexSkillEnabled = fn$1(\"CodexProvider.setSkillEnabled\")(function* (input) {",
+    "\t\tconst { client } = yield* withCodexAppServerClient(input);",
+    "\t\treturn yield* writeCodexSkillEnabled(client, input);",
+    "\t});",
+    "\twriteCodexSkillEnabled = fn$1(\"CodexProvider.writeSkillEnabled\")(function* (client, input) {",
+    "\t\tif (!(yield* client.request(\"skills/list\", {",
+    "\t\t\tcwds: [input.cwd],",
+    "\t\t\tforceReload: true",
+    "\t\t})).data.find((entry) => entry.cwd === input.cwd)?.skills.some((skill) => skill.path === input.path)) return yield* new CodexSkillNotFoundError();",
+    "\t\treturn (yield* client.request(\"skills/config/write\", {",
+    "\t\t\tpath: input.path,",
+    "\t\t\tenabled: input.enabled",
+    "\t\t})).effectiveEnabled;",
+    "\t});"
+   ]
+  ],
+  [
+   302929,
+   1,
+   [
+    "\t\t\t\tconst now$123 = yield* now;"
+   ]
+  ],
+  [
+   302935,
+   1,
+   [
+    "\t\t\t\t\tnow: now$123"
+   ]
+  ],
+  [
+   303426,
+   1,
+   [
+    "\t\t\t\t\tconst now$128 = startedAt ?? (yield* now);"
+   ]
+  ],
+  [
+   303431,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$128"
+   ]
+  ],
+  [
+   303445,
+   1,
+   [
+    "\t\t\t\t\tconst now$126 = yield* now;"
+   ]
+  ],
+  [
+   303450,
+   1,
+   [
+    "\t\t\t\t\tconst completedAt = isOrchestrationV2WorkActive(status) ? null : prior.completedAt ?? input.completedAt ?? now$126;"
+   ]
+  ],
+  [
+   303461,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$126"
+   ]
+  ],
+  [
+   303572,
+   1,
+   [
+    "\t\t\t\t\tconst now$124 = yield* now;"
+   ]
+  ],
+  [
+   303579,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$124"
+   ]
+  ],
+  [
+   303681,
+   1,
+   [
+    "\t\t\t\t\tconst now$129 = yield* now;"
+   ]
+  ],
+  [
+   303719,
+   2,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$129,",
+    "\t\t\t\t\t\tupdatedAt: now$129"
+   ]
+  ],
+  [
+   303744,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$129,"
+   ]
+  ],
+  [
+   303746,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$129"
+   ]
+  ],
+  [
+   303765,
+   1,
+   [
+    "\t\t\t\t\t\tnow: now$129,"
+   ]
+  ],
+  [
+   303777,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$129,"
+   ]
+  ],
+  [
+   303812,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$129,"
+   ]
+  ],
+  [
+   303833,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$129,"
+   ]
+  ],
+  [
+   303862,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$129"
+   ]
+  ],
+  [
+   304976,
+   1,
+   [
+    "\t\t\t\t\tconst now$130 = yield* now;"
+   ]
+  ],
+  [
+   304995,
+   1,
+   [
+    "\t\t\t\t\t\t\ttokenUsage: codexProviderTurnTokenUsage(payload.tokenUsage, formatIso(now$130))"
+   ]
+  ],
+  [
+   306251,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$125 = yield* now;"
+   ]
+  ],
+  [
+   306269,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: previous?.startedAt ?? now$125"
+   ]
+  ],
+  [
+   306275,
+   1,
+   [
+    "\t\t\t\t\t\t\tturnItem: codexRetryTurnItem(context, state, \"running\", now$125)"
+   ]
+  ],
+  [
+   306336,
+   1,
+   [
+    "\t\t\t\t\tconst now$127 = yield* now;"
+   ]
+  ],
+  [
+   306351,
+   1,
+   [
+    "\t\t\t\t\t\tproviderNodeStartedAt: now$127,"
+   ]
+  ],
+  [
+   306355,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$127,"
+   ]
+  ],
+  [
+   306368,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$127,"
+   ]
+  ],
+  [
+   306406,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$127"
+   ]
+  ],
+  [
+   307682,
+   1,
+   [
+    "\t\t\t\t\t\ttelemetryChannel: \"dev\","
+   ]
+  ],
+  [
+   311543,
+   0,
+   [
+    "\t\t\tsetSkillEnabled: (input) => resolveRuntime.pipe(flatMap$3((effective) => setCodexSkillEnabled({",
+    "\t\t\t\t...input,",
+    "\t\t\t\tbinaryPath: effective.config.binaryPath,",
+    "\t\t\t\thomePath: effective.config.homePath,",
+    "\t\t\t\tlaunchArgs: effective.config.launchArgs,",
+    "\t\t\t\tenvironment: effective.environment",
+    "\t\t\t})), scoped$2, timeout$1(\"20 seconds\"), provideService$2(ChildProcessSpawner, spawner), mapError$2((cause) => new ProviderDriverError({",
+    "\t\t\t\tdriver: DRIVER$1,",
+    "\t\t\t\tinstanceId,",
+    "\t\t\t\tdetail: \"Failed to update skill configuration.\",",
+    "\t\t\t\tcause",
+    "\t\t\t}))),"
+   ]
+  ],
+  [
+   312189,
+   0,
+   [
+    "\t\t\t\tsetSkillEnabled: (input) => setCodexSkillEnabled({",
+    "\t\t\t\t\t...input,",
+    "\t\t\t\t\tbinaryPath: effectiveConfig.binaryPath,",
+    "\t\t\t\t\thomePath: effectiveConfig.homePath,",
+    "\t\t\t\t\tlaunchArgs: resolveCodexLaunchArgs(effectiveConfig.launchArgs, processEnv),",
+    "\t\t\t\t\tenvironment: processEnv",
+    "\t\t\t\t}).pipe(scoped$2, timeout$1(\"20 seconds\"), provideService$2(ChildProcessSpawner, spawner), mapError$2((cause) => new ProviderDriverError({",
+    "\t\t\t\t\tdriver: DRIVER_KIND$6,",
+    "\t\t\t\t\tinstanceId,",
+    "\t\t\t\t\tdetail: \"Failed to update skill configuration.\",",
+    "\t\t\t\t\tcause",
+    "\t\t\t\t}))),"
+   ]
+  ],
+  [
+   313792,
+   1,
+   [
+    "\t\t\t\t\tconst now$118 = yield* now;"
+   ]
+  ],
+  [
+   313829,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$118 : null"
+   ]
+  ],
+  [
+   313847,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$118"
+   ]
+  ],
+  [
+   313866,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$118 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$118,"
+   ]
+  ],
+  [
+   313878,
+   1,
+   [
+    "\t\t\t\t\tconst now$122 = yield* now;"
+   ]
+  ],
+  [
+   313911,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$122 : null"
+   ]
+  ],
+  [
+   313930,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$122 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$122,"
+   ]
+  ],
+  [
+   313962,
+   1,
+   [
+    "\t\t\t\t\tconst now$114 = yield* now;"
+   ]
+  ],
+  [
+   313993,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: input.completed ? now$114 : null"
+   ]
+  ],
+  [
+   314008,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: input.completed ? now$114 : null,",
+    "\t\t\t\t\t\tupdatedAt: now$114"
+   ]
+  ],
+  [
+   314117,
+   1,
+   [
+    "\t\t\t\t\tconst now$115 = yield* now;"
+   ]
+  ],
+  [
+   314161,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: input.completed ? now$115 : null"
+   ]
+  ],
+  [
+   314185,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: input.completed ? now$115 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$115,"
+   ]
+  ],
+  [
+   314196,
+   1,
+   [
+    "\t\t\t\t\tconst now$121 = yield* now;"
+   ]
+  ],
+  [
+   314232,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: input.completed ? now$121 : null"
+   ]
+  ],
+  [
+   314264,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: input.completed ? now$121 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$121,"
+   ]
+  ],
+  [
+   314277,
+   1,
+   [
+    "\t\t\t\t\tconst now$116 = yield* now;"
+   ]
+  ],
+  [
+   314313,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$116"
+   ]
+  ],
+  [
+   314323,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: input.completed ? existing?.task.completedAt ?? now$116 : null,",
+    "\t\t\t\t\t\tupdatedAt: now$116"
+   ]
+  ],
+  [
+   314358,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tnow: now$116,"
+   ]
+  ],
+  [
+   314386,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$116"
+   ]
+  ],
+  [
+   314463,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$116,"
+   ]
+  ],
+  [
+   314477,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst startedAt = task.startedAt ?? now$116;"
+   ]
+  ],
+  [
+   314521,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tnow: now$116"
+   ]
+  ],
+  [
+   315000,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$119 = yield* now;"
+   ]
+  ],
+  [
+   315007,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$119"
+   ]
+  ],
+  [
+   315023,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$120 = yield* now;"
+   ]
+  ],
+  [
+   315028,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$120"
+   ]
+  ],
+  [
+   315091,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$117 = yield* now;"
+   ]
+  ],
+  [
+   315110,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcreatedAt: now$117,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$117"
+   ]
+  ],
+  [
+   315119,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tupdatedAt: now$117"
+   ]
+  ],
+  [
+   335437,
+   1,
+   [
+    "\t\t\t\tconst now$106 = yield* now;"
+   ]
+  ],
+  [
+   335446,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$106,",
+    "\t\t\t\t\tupdatedAt: now$106,"
+   ]
+  ],
+  [
+   335685,
+   1,
+   [
+    "\t\t\t\t\tconst now$113 = yield* now;"
+   ]
+  ],
+  [
+   335708,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: toolStartedAt(part, now$113),"
+   ]
+  ],
+  [
+   335748,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$113,"
+   ]
+  ],
+  [
+   335766,
+   2,
+   [
+    "\t\t\t\t\t\t\tcreatedAt: now$113,",
+    "\t\t\t\t\t\t\tupdatedAt: now$113"
+   ]
+  ],
+  [
+   335807,
+   1,
+   [
+    "\t\t\t\t\tconst completedAt = toolCompletedAt(part, now$113);"
+   ]
+  ],
+  [
+   335828,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$113"
+   ]
+  ],
+  [
+   335873,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$113,"
+   ]
+  ],
+  [
+   335892,
+   1,
+   [
+    "\t\t\t\t\tconst now$111 = yield* now;"
+   ]
+  ],
+  [
+   335894,
+   2,
+   [
+    "\t\t\t\t\tconst startedAt = toolStartedAt(part, now$111);",
+    "\t\t\t\t\tconst completedAt = toolCompletedAt(part, now$111);"
+   ]
+  ],
+  [
+   335918,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$111"
+   ]
+  ],
+  [
+   335983,
+   1,
+   [
+    "\t\t\t\t\tconst now$105 = yield* now;"
+   ]
+  ],
+  [
+   336023,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$105 : null"
+   ]
+  ],
+  [
+   336055,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: completed ? now$105 : null,",
+    "\t\t\t\t\t\t\tupdatedAt: now$105,"
+   ]
+  ],
+  [
+   336111,
+   1,
+   [
+    "\t\t\t\t\tconst now$107 = yield* now;"
+   ]
+  ],
+  [
+   336131,
+   1,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$107,"
+   ]
+  ],
+  [
+   336147,
+   1,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$107,"
+   ]
+  ],
+  [
+   336168,
+   1,
+   [
+    "\t\t\t\t\t\t\tstartedAt: now$107,"
+   ]
+  ],
+  [
+   336175,
+   1,
+   [
+    "\t\t\t\t\t\tturnItem: runtimeRequestTurnItem(pending, \"waiting\", null, now$107)"
+   ]
+  ],
+  [
+   336188,
+   1,
+   [
+    "\t\t\t\t\tconst now$109 = yield* now;"
+   ]
+  ],
+  [
+   336194,
+   1,
+   [
+    "\t\t\t\t\t\t\tresolvedAt: now$109"
+   ]
+  ],
+  [
+   336222,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$109"
+   ]
+  ],
+  [
+   336228,
+   1,
+   [
+    "\t\t\t\t\t\tturnItem: runtimeRequestTurnItem(pending, status === \"resolved\" ? \"completed\" : \"cancelled\", now$109, now$109)"
+   ]
+  ],
+  [
+   336373,
+   2,
+   [
+    "\t\t\t\t\tconst now$110 = yield* now;",
+    "\t\t\t\t\tconst startedAt = dateTimeFromEpoch(message.time.created, now$110);"
+   ]
+  ],
+  [
+   336454,
+   1,
+   [
+    "\t\t\t\t\tconst now$108 = yield* now;"
+   ]
+  ],
+  [
+   336475,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$108"
+   ]
+  ],
+  [
+   336500,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$108,",
+    "\t\t\t\t\t\t\tupdatedAt: now$108,"
+   ]
+  ],
+  [
+   336513,
+   1,
+   [
+    "\t\t\t\t\tconst now$112 = yield* now;"
+   ]
+  ],
+  [
+   336535,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$112,",
+    "\t\t\t\t\t\t\tupdatedAt: now$112"
+   ]
+  ],
+  [
+   337717,
+   1,
+   [
+    "\t\t\tconst now$101 = yield* now;"
+   ]
+  ],
+  [
+   337726,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$101,",
+    "\t\t\t\tupdatedAt: now$101,"
+   ]
+  ],
+  [
+   338216,
+   1,
+   [
+    "\t\t\t\tconst now$103 = yield* now;"
+   ]
+  ],
+  [
+   338250,
+   1,
+   [
+    "\t\t\t\t\tnow: now$103,"
+   ]
+  ],
+  [
+   338268,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$103,",
+    "\t\t\t\t\tupdatedAt: now$103"
+   ]
+  ],
+  [
+   338547,
+   1,
+   [
+    "\t\t\t\tconst now$104 = yield* now;"
+   ]
+  ],
+  [
+   338556,
+   1,
+   [
+    "\t\t\t\t\t\tresolvedAt: now$104"
+   ]
+  ],
+  [
+   338565,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$104"
+   ]
+  ],
+  [
+   338574,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$104,",
+    "\t\t\t\t\t\tupdatedAt: now$104"
+   ]
+  ],
+  [
+   338608,
+   1,
+   [
+    "\t\t\t\tconst now$102 = yield* now;"
+   ]
+  ],
+  [
+   338626,
+   1,
+   [
+    "\t\t\t\t\tcreatedAt: now$102,"
+   ]
+  ],
+  [
+   338643,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$102,"
+   ]
+  ],
+  [
+   338657,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$102,"
+   ]
+  ],
+  [
+   338659,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$102"
+   ]
+  ],
+  [
+   341596,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/fingerprint.js"
+   ]
+  ],
+  [
+   341614,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/errors.js"
+   ]
+  ],
+  [
+   341637,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/connection/connection.js"
+   ]
+  ],
+  [
+   342093,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/connection/spawn.js"
+   ]
+  ],
+  [
+   342480,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/facade/gap-fill.js"
+   ]
+  ],
+  [
+   342719,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/facade/client.js"
+   ]
+  ],
+  [
+   342723,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@muse-code+sdk@1.4.6_patch__ccef99c979e2bfb219f85f566b432c7d/node_modules/@muse-code/sdk/dist/src/index.js"
+   ]
+  ],
+  [
+   343795,
+   1,
+   [
+    "\t\t\t\tconst now$99 = yield* now;"
+   ]
+  ],
+  [
+   343804,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$99,",
+    "\t\t\t\t\tupdatedAt: now$99,"
+   ]
+  ],
+  [
+   345288,
+   1,
+   [
+    "\t\t\t\t\tconst now$100 = yield* now;"
+   ]
+  ],
+  [
+   345306,
+   2,
+   [
+    "\t\t\t\t\t\t\tcreatedAt: now$100,",
+    "\t\t\t\t\t\t\tupdatedAt: now$100"
+   ]
+  ],
+  [
+   347871,
+   1,
+   [
+    "\t\t\t\tconst now$96 = yield* now;"
+   ]
+  ],
+  [
+   347881,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$96,",
+    "\t\t\t\t\tupdatedAt: now$96,"
+   ]
+  ],
+  [
+   348632,
+   2,
+   [
+    "\t\t\t\t\t\tconst now$98 = yield* now;",
+    "\t\t\t\t\t\tpending.expirationFiber = yield* sleep(millis$1(Math.max(0, expiresAt - toEpochMillis(now$98)))).pipe(andThen(offer$1(connection.events, {"
+   ]
+  ],
+  [
+   349823,
+   1,
+   [
+    "\t\t\t\t\t\tconst now$97 = yield* now;"
+   ]
+  ],
+  [
+   349848,
+   2,
+   [
+    "\t\t\t\t\t\t\t\tcreatedAt: now$97,",
+    "\t\t\t\t\t\t\t\tupdatedAt: now$97"
+   ]
+  ],
+  [
+   350977,
+   2,
+   [
+    "\t\tconst now$95 = yield* now;",
+    "\t\treturn snapshot$2(settings, formatIso(now$95), {"
+   ]
+  ],
+  [
+   351485,
+   1,
+   [
+    "\t\t\tconst [hostPower, leases, now$93, settings] = yield* all$6(["
+   ]
+  ],
+  [
+   351494,
+   1,
+   [
+    "\t\t\t\tnow: now$93,"
+   ]
+  ],
+  [
+   351496,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$93"
+   ]
+  ],
+  [
+   351501,
+   2,
+   [
+    "\t\t\tconst now$94 = yield* now;",
+    "\t\t\tconst expiresAt = add$2(now$94, { milliseconds: ttlMs });"
+   ]
+  ],
+  [
+   351514,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$94,"
+   ]
+  ],
+  [
+   351517,
+   1,
+   [
+    "\t\t\tyield* update$5(leasesRef, (leases) => upsertClientActivityLease(leases, lease, now$94));"
+   ]
+  ],
+  [
+   351531,
+   1,
+   [
+    "\t\t\tconst now$92 = yield* now;"
+   ]
+  ],
+  [
+   351534,
+   1,
+   [
+    "\t\t\t\tfor (const [key, lease] of next) if (!isLeaseActive(lease, now$92)) next.delete(key);"
+   ]
+  ],
+  [
+   354326,
+   0,
+   [
+    "\tinit_HostProcess();"
+   ]
+  ],
+  [
+   354697,
+   3,
+   [
+    "\t\t\tconst now$91 = yield* now;",
+    "\t\t\tif (!provider || !provider.enabled || !input.fresh && scannedFrom && !scannedFrom.slashCommandsPending && isProviderWorkspaceSnapshotCurrent(scannedFrom, toEpochMillis(now$91))) return providers;",
+    "\t\t\tconst scannedAt = formatIso(now$91);"
+   ]
+  ],
+  [
+   354758,
+   0,
+   [
+    "\t\tconst setSkillEnabled = fn$1(\"ProviderRegistry.setSkillEnabled\")(function* (input) {",
+    "\t\t\tconst instance = yield* instanceRegistry.getInstance(input.instanceId);",
+    "\t\t\tif (!instance?.enabled || !instance.setSkillEnabled) return yield* new ProviderSetupError({",
+    "\t\t\t\tinstanceId: input.instanceId,",
+    "\t\t\t\toperation: \"set-skill-enabled\",",
+    "\t\t\t\tdetail: \"This provider does not support changing skill configuration.\"",
+    "\t\t\t});",
+    "\t\t\tconst cwd = input.cwd ?? (yield* WorkingDirectory);",
+    "\t\t\tconst enabled = yield* instance.setSkillEnabled({",
+    "\t\t\t\t...input,",
+    "\t\t\t\tcwd",
+    "\t\t\t}).pipe(mapError$2((cause) => new ProviderSetupError({",
+    "\t\t\t\tinstanceId: input.instanceId,",
+    "\t\t\t\toperation: \"set-skill-enabled\",",
+    "\t\t\t\tdetail: \"Failed to update skill configuration. Refresh and try again.\",",
+    "\t\t\t\tcause",
+    "\t\t\t})));",
+    "\t\t\tyield* update$5(providersRef, (providers) => providers.map((provider) => provider.instanceId !== input.instanceId ? provider : {",
+    "\t\t\t\t...provider,",
+    "\t\t\t\tskills: provider.skills.map((skill) => skill.path === input.path ? {",
+    "\t\t\t\t\t...skill,",
+    "\t\t\t\t\tenabled",
+    "\t\t\t\t} : skill),",
+    "\t\t\t\t...provider.workspaceSnapshots === void 0 ? {} : { workspaceSnapshots: provider.workspaceSnapshots.map((snapshot) => ({",
+    "\t\t\t\t\t...snapshot,",
+    "\t\t\t\t\tskills: snapshot.skills.map((skill) => skill.path === input.path ? {",
+    "\t\t\t\t\t\t...skill,",
+    "\t\t\t\t\t\tenabled",
+    "\t\t\t\t\t} : skill)",
+    "\t\t\t\t})) }",
+    "\t\t\t}));",
+    "\t\t\tconst providers = yield* get$7(providersRef);",
+    "\t\t\tyield* publish(changesPubSub, providers);",
+    "\t\t\treturn {",
+    "\t\t\t\tproviders,",
+    "\t\t\t\tenabled",
+    "\t\t\t};",
+    "\t\t});"
+   ]
+  ],
+  [
+   354760,
+   0,
+   [
+    "\t\t\tsetSkillEnabled,"
+   ]
+  ],
+  [
+   358181,
+   0,
+   [
+    "\tinit_DateTime();"
+   ]
+  ],
+  [
+   358182,
+   1,
+   [
+    "\tSHARED_WORKSPACE_RESTORE_MESSAGE = \"Another conversation is running in this project or may have changed files after the selected checkpoint. Stop that conversation and choose a checkpoint that includes its changes, or rewind the conversation without restoring files.\";"
+   ]
+  ],
+  [
+   358190,
+   2,
+   [
+    "\t\tlet shared = false;",
+    "\t\t{"
+   ]
+  ],
+  [
+   358194,
+   1,
+   [
+    "\t\t\tshared = cwd !== (worktreePath === null ? cwd : yield* resolve(worktreePath));"
+   ]
+  ],
+  [
+   358197,
+   1,
+   []
+  ],
+  [
+   358220,
+   3,
+   [
+    "\t\t\t\t\tfor (const candidate of new Set(paths)) {"
+   ]
+  ],
+  [
+   358225,
+   1,
+   [
+    "\t\t\t\t\t\t\tconst restorePoint = scope.restorePoint;",
+    "\t\t\t\t\t\t\tif (otherThread.activeRunId != null || (otherThread.pendingBackgroundTasks?.length ?? 0) > 0 || providerContext.providerSessions.some((session) => [",
+    "\t\t\t\t\t\t\t\t\"starting\",",
+    "\t\t\t\t\t\t\t\t\"running\",",
+    "\t\t\t\t\t\t\t\t\"waiting\",",
+    "\t\t\t\t\t\t\t\t\"error\"",
+    "\t\t\t\t\t\t\t].includes(session.status)) || restorePoint === void 0) shared = true;",
+    "\t\t\t\t\t\t\telse {",
+    "\t\t\t\t\t\t\t\tconst { turnItems } = yield* projections.getThreadRecords(otherThread.id, [\"turnItems\"], { turnItemTypes: [",
+    "\t\t\t\t\t\t\t\t\t\"command_execution\",",
+    "\t\t\t\t\t\t\t\t\t\"file_change\",",
+    "\t\t\t\t\t\t\t\t\t\"dynamic_tool\"",
+    "\t\t\t\t\t\t\t\t] });",
+    "\t\t\t\t\t\t\t\tshared = turnItems.some((item) => {",
+    "\t\t\t\t\t\t\t\t\tconst times = [",
+    "\t\t\t\t\t\t\t\t\t\titem.startedAt,",
+    "\t\t\t\t\t\t\t\t\t\titem.completedAt,",
+    "\t\t\t\t\t\t\t\t\t\titem.updatedAt",
+    "\t\t\t\t\t\t\t\t\t].filter((time) => time != null);",
+    "\t\t\t\t\t\t\t\t\treturn times.length === 0 || times.some((time) => isGreaterThanOrEqualTo$2(time, restorePoint));",
+    "\t\t\t\t\t\t\t\t});",
+    "\t\t\t\t\t\t\t}"
+   ]
+  ],
+  [
+   358279,
+   4,
+   [
+    "\t\tconst isGitRepository = fn$1(\"CheckpointStore.isGitRepository\")(function* (cwd, options) {",
+    "\t\t\tif ((yield* vcsRegistry.detect({",
+    "\t\t\t\tcwd,",
+    "\t\t\t\trequestedKind: \"git\"",
+    "\t\t\t})) !== null) return true;",
+    "\t\t\tif (options?.initializeIfMissing !== true) return false;",
+    "\t\t\tyield* (yield* vcsRegistry.get(\"git\")).initRepository({ cwd });",
+    "\t\t\treturn (yield* vcsRegistry.detect({",
+    "\t\t\t\tcwd,",
+    "\t\t\t\trequestedKind: \"git\"",
+    "\t\t\t})) !== null;",
+    "\t\t});"
+   ]
+  ],
+  [
+   358438,
+   1,
+   [
+    "\t\t\tif (!(yield* checkpointStore.isGitRepository(input.scope.cwd, { initializeIfMissing: true }))) return;"
+   ]
+  ],
+  [
+   359845,
+   0,
+   [
+    "\t\tconst terminationLedger = createMcpTerminationLedger();"
+   ]
+  ],
+  [
+   359917,
+   1,
+   [
+    "\t\tconst resolveForTermination = fn$1(\"McpSessionRegistry.resolveForTermination\")(function* (rawToken, method) {",
+    "\t\t\tif (method !== \"DELETE\" || rawToken.length === 0) return void 0;",
+    "\t\t\tconst tokenHash = yield* hashToken(rawToken);",
+    "\t\t\tconst timestamp = yield* currentTimeMillis$2;",
+    "\t\t\treturn terminationLedger.resolve(tokenHash, method, timestamp);",
+    "\t\t});",
+    "\t\tconst revokeWhere = (predicate) => gen$1(function* () {",
+    "\t\t\tconst timestamp = yield* currentTimeMillis$2;",
+    "\t\t\tyield* update$4(state, ({ records }) => {",
+    "\t\t\t\tconst next = new Map(records);",
+    "\t\t\t\tfor (const [hash, record] of records) if (predicate(record)) {",
+    "\t\t\t\t\tterminationLedger.retire(hash, record.scope, timestamp);",
+    "\t\t\t\t\tnext.delete(hash);",
+    "\t\t\t\t}",
+    "\t\t\t\treturn { records: next };",
+    "\t\t\t});",
+    "\t\t});"
+   ]
+  ],
+  [
+   359921,
+   0,
+   [
+    "\t\t\tresolveForTermination,"
+   ]
+  ],
+  [
+   359928,
+   1,
+   [
+    "\t\t\trevokeAll: revokeWhere(() => true)"
+   ]
+  ],
+  [
+   360684,
+   1,
+   [
+    "\t\t\tconst now$90 = yield* now;"
+   ]
+  ],
+  [
+   360693,
+   1,
+   [
+    "\t\t\t\t\tresolvedAt: now$90"
+   ]
+  ],
+  [
+   360704,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$90"
+   ]
+  ],
+  [
+   360715,
+   2,
+   [
+    "\t\t\t\t\tcompletedAt: now$90,",
+    "\t\t\t\t\tupdatedAt: now$90"
+   ]
+  ],
+  [
+   360734,
+   1,
+   [
+    "\t\t\t\tconst now$89 = yield* now;"
+   ]
+  ],
+  [
+   360741,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$89"
+   ]
+  ],
+  [
+   360743,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$89"
+   ]
+  ],
+  [
+   360764,
+   1,
+   [
+    "\t\t\tconst now$88 = yield* now;"
+   ]
+  ],
+  [
+   360781,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$88,"
+   ]
+  ],
+  [
+   360797,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$88,"
+   ]
+  ],
+  [
+   360801,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$88"
+   ]
+  ],
+  [
+   360811,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$88,"
+   ]
+  ],
+  [
+   360815,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$88"
+   ]
+  ],
+  [
+   360827,
+   1,
+   [
+    "\t\t\t\t\tconst now$87 = yield* now;"
+   ]
+  ],
+  [
+   360835,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$87"
+   ]
+  ],
+  [
+   360837,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$87"
+   ]
+  ],
+  [
+   360994,
+   1,
+   [
+    "\t\t\t\tconst now$86 = yield* now;"
+   ]
+  ],
+  [
+   361001,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$86"
+   ]
+  ],
+  [
+   361003,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$86"
+   ]
+  ],
+  [
+   365780,
+   2,
+   [
+    "\t\t\t\t\tconst now$85 = yield* now;",
+    "\t\t\t\t\tif (isGreaterThanOrEqualTo$2(now$85, nextRetryWarningAt)) {"
+   ]
+  ],
+  [
+   365787,
+   1,
+   [
+    "\t\t\t\t\t\tnextRetryWarningAt = add$2(now$85, { minutes: 10 });"
+   ]
+  ],
+  [
+   366982,
+   1,
+   [
+    "\t\t\tconst now$83 = yield* now;"
+   ]
+  ],
+  [
+   366993,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$83,"
+   ]
+  ],
+  [
+   367000,
+   1,
+   [
+    "\t\t\tconst now$84 = yield* now;"
+   ]
+  ],
+  [
+   367005,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$84,"
+   ]
+  ],
+  [
+   367017,
+   1,
+   [
+    "\t\t\tconst now$81 = yield* now;"
+   ]
+  ],
+  [
+   367039,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$81,"
+   ]
+  ],
+  [
+   367047,
+   1,
+   [
+    "\t\t\t\t\t\t\tresolvedAt: now$81"
+   ]
+  ],
+  [
+   367061,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$81,"
+   ]
+  ],
+  [
+   367065,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$81"
+   ]
+  ],
+  [
+   367079,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$81,"
+   ]
+  ],
+  [
+   367083,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$81,",
+    "\t\t\t\t\t\t\tupdatedAt: now$81"
+   ]
+  ],
+  [
+   367121,
+   1,
+   [
+    "\t\t\t\tconst now$82 = yield* now;"
+   ]
+  ],
+  [
+   367133,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$82,"
+   ]
+  ],
+  [
+   367137,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$82"
+   ]
+  ],
+  [
+   369262,
+   1,
+   [
+    "\t\t\tconst now$43 = yield* now;"
+   ]
+  ],
+  [
+   369279,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$43,"
+   ]
+  ],
+  [
+   369283,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$43"
+   ]
+  ],
+  [
+   369292,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$43,"
+   ]
+  ],
+  [
+   369296,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$43"
+   ]
+  ],
+  [
+   369305,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$43,"
+   ]
+  ],
+  [
+   369321,
+   3,
+   [
+    "\t\t\t\t\t\tstartedAt: now$43,",
+    "\t\t\t\t\t\tcompletedAt: now$43,",
+    "\t\t\t\t\t\tupdatedAt: now$43,"
+   ]
+  ],
+  [
+   369334,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$43,"
+   ]
+  ],
+  [
+   369339,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$43"
+   ]
+  ],
+  [
+   369367,
+   1,
+   [
+    "\t\t\t\tconst now$33 = yield* now;"
+   ]
+  ],
+  [
+   369373,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$33,"
+   ]
+  ],
+  [
+   369405,
+   1,
+   [
+    "\t\t\tconst now$34 = yield* now;"
+   ]
+  ],
+  [
+   369432,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$34,",
+    "\t\t\t\tupdatedAt: now$34"
+   ]
+  ],
+  [
+   369468,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369527,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$34"
+   ]
+  ],
+  [
+   369539,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$34"
+   ]
+  ],
+  [
+   369555,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$34"
+   ]
+  ],
+  [
+   369577,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$34"
+   ]
+  ],
+  [
+   369621,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$34,",
+    "\t\t\t\tcompletedAt: now$34,",
+    "\t\t\t\tupdatedAt: now$34,"
+   ]
+  ],
+  [
+   369641,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$34,",
+    "\t\t\t\tcompletedAt: now$34,",
+    "\t\t\t\tupdatedAt: now$34,"
+   ]
+  ],
+  [
+   369662,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369674,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369687,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369701,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369706,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$34"
+   ]
+  ],
+  [
+   369714,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369732,
+   3,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$34,",
+    "\t\t\t\t\t\tupdatedAt: now$34,",
+    "\t\t\t\t\t\tconsumedAt: now$34"
+   ]
+  ],
+  [
+   369741,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369749,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369758,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369766,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369769,
+   1,
+   [
+    "\t\t\t\t\t\tdetachedAt: now$34,"
+   ]
+  ],
+  [
+   369778,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369787,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369796,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$34,"
+   ]
+  ],
+  [
+   369861,
+   1,
+   [
+    "\t\t\tconst now$35 = yield* now;"
+   ]
+  ],
+  [
+   369869,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$35,"
+   ]
+  ],
+  [
+   369911,
+   1,
+   [
+    "\t\t\tconst now$26 = yield* now;"
+   ]
+  ],
+  [
+   369929,
+   1,
+   [
+    "\t\t\t\t\tnow: now$26"
+   ]
+  ],
+  [
+   369939,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$26,"
+   ]
+  ],
+  [
+   369942,
+   1,
+   [
+    "\t\t\t\tfor (const event of delegatedCompletionPlanEvents(command.parentThreadId, plan, projection.thread.providerInstanceId, now$26)) yield* emitEvent(event);"
+   ]
+  ],
+  [
+   369953,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$26,"
+   ]
+  ],
+  [
+   369964,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$26"
+   ]
+  ],
+  [
+   369973,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$26,"
+   ]
+  ],
+  [
+   370008,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$26,"
+   ]
+  ],
+  [
+   370021,
+   1,
+   [
+    "\t\t\t\t\t\tnow: now$26"
+   ]
+  ],
+  [
+   370032,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$26,"
+   ]
+  ],
+  [
+   370041,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$26"
+   ]
+  ],
+  [
+   370124,
+   1,
+   [
+    "\t\t\tconst now$61 = yield* now;"
+   ]
+  ],
+  [
+   370148,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$61,",
+    "\t\t\t\tupdatedAt: now$61,"
+   ]
+  ],
+  [
+   370162,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$61,"
+   ]
+  ],
+  [
+   370170,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$61,"
+   ]
+  ],
+  [
+   370191,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$61,",
+    "\t\t\t\t\tupdatedAt: now$61"
+   ]
+  ],
+  [
+   370272,
+   1,
+   [
+    "\t\t\tconst now$73 = yield* now;"
+   ]
+  ],
+  [
+   370276,
+   1,
+   [
+    "\t\t\t\tnow: now$73"
+   ]
+  ],
+  [
+   370288,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$73,"
+   ]
+  ],
+  [
+   370294,
+   1,
+   [
+    "\t\t\tconst now$59 = yield* now;"
+   ]
+  ],
+  [
+   370298,
+   1,
+   [
+    "\t\t\t\tnow: now$59"
+   ]
+  ],
+  [
+   370309,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$59,"
+   ]
+  ],
+  [
+   370452,
+   1,
+   [
+    "\t\t\tconst now$47 = yield* now;"
+   ]
+  ],
+  [
+   370462,
+   1,
+   [
+    "\t\t\t\tif (command.limitRecovery.snooze === true && resetMs <= toEpochMillis(now$47)) return yield* new OrchestratorDispatchError({"
+   ]
+  ],
+  [
+   370477,
+   1,
+   [
+    "\t\t\t\tif (isNone(parsedSnoozedUntil) || toEpochMillis(parsedSnoozedUntil.value) <= toEpochMillis(now$47)) return yield* new OrchestratorDispatchError({"
+   ]
+  ],
+  [
+   370514,
+   1,
+   [
+    "\t\t\t\t\t\tarchivedAt: now$47,"
+   ]
+  ],
+  [
+   370518,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370523,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370531,
+   1,
+   [
+    "\t\t\t\t\t\t\tsettledAt: alreadySettled ? thread.settledAt : command.settledAt ?? now$47,"
+   ]
+  ],
+  [
+   370539,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: alreadySettled && thread.snoozedUntil == null && thread.snoozedAt == null ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370548,
+   2,
+   [
+    "\t\t\t\t\t\t\tunsettledAt: alreadyPinnedActive ? thread.unsettledAt ?? null : now$47,",
+    "\t\t\t\t\t\t\tupdatedAt: alreadyPinnedActive ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370559,
+   2,
+   [
+    "\t\t\t\t\t\tsnoozedAt: now$47,",
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370568,
+   2,
+   [
+    "\t\t\t\t\t\t\tlastSnoozeWakeAt: alreadyAwake ? thread.lastSnoozeWakeAt : now$47,",
+    "\t\t\t\t\t\t\tupdatedAt: alreadyAwake ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370576,
+   2,
+   [
+    "\t\t\t\t\t\t\tautoSettleDisabledAt: command.enabled ? null : thread.autoSettleDisabledAt ?? now$47,",
+    "\t\t\t\t\t\t\tupdatedAt: unchanged ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370585,
+   1,
+   [
+    "\t\t\t\t\t\t\tpinnedAt: alreadyPinned ? thread.pinnedAt : now$47,"
+   ]
+  ],
+  [
+   370589,
+   1,
+   [
+    "\t\t\t\t\t\t\t...thread.settledOverride === \"settled\" ? { unsettledAt: now$47 } : {},"
+   ]
+  ],
+  [
+   370592,
+   2,
+   [
+    "\t\t\t\t\t\t\tlastSnoozeWakeAt: thread.snoozedUntil == null ? thread.lastSnoozeWakeAt : now$47,",
+    "\t\t\t\t\t\t\tupdatedAt: alreadyPinned && !promotes ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370602,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: alreadyUnpinned ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370610,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: keyUnchanged ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370626,
+   1,
+   [
+    "\t\t\t\t\t\tconst snoozeExpired = thread.snoozedUntil != null && toEpochMillis(thread.snoozedUntil) <= toEpochMillis(now$47);"
+   ]
+  ],
+  [
+   370649,
+   1,
+   [
+    "\t\t\t\t\t\t\t...command.limitRecovery !== void 0 && limitRecovery?.snooze === true && Date.parse(limitRecovery.resetAt) > toEpochMillis(now$47) ? {"
+   ]
+  ],
+  [
+   370651,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tsnoozedAt: now$47"
+   ]
+  ],
+  [
+   370655,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tlastSnoozeWakeAt: now$47"
+   ]
+  ],
+  [
+   370661,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tpullRequests: [...threadPullRequestsOf(thread).filter((link) => !(thread.linkedPullRequest && threadPullRequestKeysEqual(link, legacyThreadPullRequestKey$1(thread.linkedPullRequest))) && !(command.linkedPullRequest && threadPullRequestKeysEqual(link, legacyThreadPullRequestKey$1(command.linkedPullRequest)))), ...command.linkedPullRequest ? [legacyPullRequestLink(thread, command.linkedPullRequest, now$47)] : []]"
+   ]
+  ],
+  [
+   370665,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tstartedAt: now$47"
+   ]
+  ],
+  [
+   370667,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370690,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tlinkedAt: formatIso(now$47),"
+   ]
+  ],
+  [
+   370701,
+   1,
+   [
+    "\t\t\t\t\t\t\t\t\tlinkedAt: formatIso(now$47),"
+   ]
+  ],
+  [
+   370726,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: command.type === \"thread.pull-request-link.sync\" ? thread.updatedAt : now$47"
+   ]
+  ],
+  [
+   370732,
+   1,
+   [
+    "\t\t\t\t\t\tconst startedAt = formatIso(now$47);"
+   ]
+  ],
+  [
+   370776,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: command.type === \"thread.pull-request.watch\" ? now$47 : thread.updatedAt"
+   ]
+  ],
+  [
+   370784,
+   1,
+   [
+    "\t\t\t\t\t\t\tpullRequests: [...threadPullRequestsOf(thread).filter((link) => !(thread.linkedPullRequest && threadPullRequestKeysEqual(link, legacyThreadPullRequestKey$1(thread.linkedPullRequest))) && !(command.linkedPullRequest && threadPullRequestKeysEqual(link, legacyThreadPullRequestKey$1(command.linkedPullRequest)))), ...command.linkedPullRequest ? [legacyPullRequestLink(thread, command.linkedPullRequest, now$47)] : []]"
+   ]
+  ],
+  [
+   370792,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370797,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370802,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370809,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370821,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370857,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370885,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370890,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$47"
+   ]
+  ],
+  [
+   370902,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370907,
+   2,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$47,",
+    "\t\t\t\t\t\t\tupdatedAt: now$47"
+   ]
+  ],
+  [
+   370920,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370924,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$47"
+   ]
+  ],
+  [
+   370940,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370944,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$47"
+   ]
+  ],
+  [
+   370952,
+   1,
+   [
+    "\t\t\t\t\tnow: now$47,"
+   ]
+  ],
+  [
+   370959,
+   1,
+   [
+    "\t\t\t\t\tnow: now$47"
+   ]
+  ],
+  [
+   370971,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$47,"
+   ]
+  ],
+  [
+   370974,
+   1,
+   [
+    "\t\t\t\t\t\t\tdetachedAt: now$47,"
+   ]
+  ],
+  [
+   371012,
+   1,
+   [
+    "\t\t\tconst now$78 = yield* now;"
+   ]
+  ],
+  [
+   371018,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$78,"
+   ]
+  ],
+  [
+   371021,
+   1,
+   [
+    "\t\t\t\t\tdetachedAt: now$78,"
+   ]
+  ],
+  [
+   371054,
+   1,
+   [
+    "\t\t\tconst now$55 = yield* now;"
+   ]
+  ],
+  [
+   371059,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$55,"
+   ]
+  ],
+  [
+   371064,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$55"
+   ]
+  ],
+  [
+   371147,
+   1,
+   [
+    "\t\t\tconst now$58 = command.createdAt ?? (yield* now);"
+   ]
+  ],
+  [
+   371166,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$58"
+   ]
+  ],
+  [
+   371172,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$58,"
+   ]
+  ],
+  [
+   371179,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$58,"
+   ]
+  ],
+  [
+   371240,
+   1,
+   [
+    "\t\t\tconst now$45 = command.createdAt ?? (yield* now);"
+   ]
+  ],
+  [
+   371262,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$45,",
+    "\t\t\t\tupdatedAt: now$45,"
+   ]
+  ],
+  [
+   371270,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$45,"
+   ]
+  ],
+  [
+   371275,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$45"
+   ]
+  ],
+  [
+   371282,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$45,"
+   ]
+  ],
+  [
+   371349,
+   1,
+   [
+    "\t\t\tconst now$38 = yield* now;"
+   ]
+  ],
+  [
+   371385,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$38,",
+    "\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371405,
+   3,
+   [
+    "\t\t\t\t\tstartedAt: now$38,",
+    "\t\t\t\t\tcompletedAt: now$38,",
+    "\t\t\t\t\tupdatedAt: now$38,"
+   ]
+  ],
+  [
+   371422,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371431,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371449,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371454,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371546,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$38,",
+    "\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371552,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371575,
+   1,
+   [
+    "\t\t\t\t\tcreatedAt: now$38"
+   ]
+  ],
+  [
+   371598,
+   3,
+   [
+    "\t\t\t\t\tcreatedAt: now$38,",
+    "\t\t\t\t\tupdatedAt: now$38,",
+    "\t\t\t\t\tconsumedAt: now$38"
+   ]
+  ],
+  [
+   371613,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371634,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$38"
+   ]
+  ],
+  [
+   371687,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371691,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$38"
+   ]
+  ],
+  [
+   371700,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371704,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$38"
+   ]
+  ],
+  [
+   371711,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371716,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$38"
+   ]
+  ],
+  [
+   371724,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371732,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371740,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371749,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371758,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371767,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371776,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$38,"
+   ]
+  ],
+  [
+   371823,
+   2,
+   [
+    "\t\t\t\tconst now$41 = yield* now;",
+    "\t\t\t\tif (run?.id !== command.usageLimitContinuationOfRunId || failure?.class !== \"usage_limit\" || threadShellFromProjection(projection).lastErrorClass !== \"usage_limit\" || !recovery?.autoResume || recovery.requestId !== command.usageLimitRecoveryRequestId || recovery.runId !== run.id || recovery.resetAt !== failure.resetAt || Date.parse(recovery.resetAt) > toEpochMillis(now$41) || projection.thread.archivedAt !== null || projection.thread.deletedAt !== null || projection.thread.settledOverride === \"settled\" || projection.thread.providerInstanceId !== run.providerInstanceId || projection.runtimeRequests.some((request) => request.status === \"pending\") || projection.thread.snoozedUntil != null && toEpochMillis(projection.thread.snoozedUntil) > toEpochMillis(now$41)) {"
+   ]
+  ],
+  [
+   371828,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$41,"
+   ]
+  ],
+  [
+   371831,
+   1,
+   [
+    "\t\t\t\t\t\t\t...recovery?.autoResume && recovery.requestId === command.usageLimitRecoveryRequestId && recovery.runId === command.usageLimitContinuationOfRunId && projection.thread.snoozedUntil != null && toEpochMillis(projection.thread.snoozedUntil) > toEpochMillis(now$41) ? { limitRecovery: {"
+   ]
+  ],
+  [
+   371853,
+   1,
+   [
+    "\t\t\t\tconst now$60 = yield* now;"
+   ]
+  ],
+  [
+   371858,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$60,"
+   ]
+  ],
+  [
+   371861,
+   1,
+   [
+    "\t\t\t\t\t\tlastVisitedAt: subtract(now$60, { milliseconds: 1 })"
+   ]
+  ],
+  [
+   371868,
+   1,
+   [
+    "\t\t\t\tconst now$48 = yield* now;"
+   ]
+  ],
+  [
+   371873,
+   2,
+   [
+    "\t\t\t\t\tunsettledAt: projection.thread.settledOverride === \"active\" ? projection.thread.unsettledAt ?? null : now$48,",
+    "\t\t\t\t\tupdatedAt: now$48"
+   ]
+  ],
+  [
+   371880,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$48,"
+   ]
+  ],
+  [
+   371887,
+   1,
+   [
+    "\t\t\t\tconst now$54 = yield* now;"
+   ]
+  ],
+  [
+   371892,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$54"
+   ]
+  ],
+  [
+   371898,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$54,"
+   ]
+  ],
+  [
+   371906,
+   1,
+   [
+    "\t\t\t\tconst now$31 = yield* now;"
+   ]
+  ],
+  [
+   371912,
+   1,
+   [
+    "\t\t\t\t\t\tstartedAt: now$31"
+   ]
+  ],
+  [
+   371914,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$31"
+   ]
+  ],
+  [
+   371920,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$31,"
+   ]
+  ],
+  [
+   372082,
+   1,
+   [
+    "\t\t\t\tconst now$66 = yield* now;"
+   ]
+  ],
+  [
+   372115,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$66,",
+    "\t\t\t\t\tupdatedAt: now$66"
+   ]
+  ],
+  [
+   372132,
+   1,
+   [
+    "\t\t\t\t\tcreatedAt: now$66"
+   ]
+  ],
+  [
+   372153,
+   1,
+   [
+    "\t\t\t\t\trequestedAt: now$66,"
+   ]
+  ],
+  [
+   372209,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$66,",
+    "\t\t\t\t\tupdatedAt: now$66,"
+   ]
+  ],
+  [
+   372219,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372228,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372231,
+   1,
+   [
+    "\t\t\t\tyield* completeSourcePlan(now$66);"
+   ]
+  ],
+  [
+   372238,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372247,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372256,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372265,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372275,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$66,"
+   ]
+  ],
+  [
+   372286,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$66"
+   ]
+  ],
+  [
+   372297,
+   1,
+   [
+    "\t\t\t\t\tnow: now$66"
+   ]
+  ],
+  [
+   372309,
+   1,
+   [
+    "\t\t\tconst now$29 = yield* now;"
+   ]
+  ],
+  [
+   372314,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372319,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372383,
+   1,
+   [
+    "\t\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372399,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$29,",
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372406,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372422,
+   1,
+   [
+    "\t\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372436,
+   1,
+   [
+    "\t\t\t\t\trequestedAt: now$29,"
+   ]
+  ],
+  [
+   372494,
+   2,
+   [
+    "\t\t\t\t\tcreatedAt: now$29,",
+    "\t\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   372516,
+   3,
+   [
+    "\t\t\t\t\tstartedAt: now$29,",
+    "\t\t\t\t\tcompletedAt: now$29,",
+    "\t\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   372543,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$29,"
+   ]
+  ],
+  [
+   372545,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   372555,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372563,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372572,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372575,
+   1,
+   [
+    "\t\t\t\tyield* completeSourcePlan(now$29);"
+   ]
+  ],
+  [
+   372582,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372591,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372600,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372609,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372618,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372627,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372637,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   372640,
+   1,
+   [
+    "\t\t\t\t\t\t\tdetachedAt: now$29,"
+   ]
+  ],
+  [
+   372759,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$29,",
+    "\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372765,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372783,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372801,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372834,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372846,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372859,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   372907,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372919,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$29"
+   ]
+  ],
+  [
+   372937,
+   1,
+   [
+    "\t\t\t\trequestedAt: now$29,"
+   ]
+  ],
+  [
+   372993,
+   2,
+   [
+    "\t\t\t\tcreatedAt: now$29,",
+    "\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   373015,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$29,",
+    "\t\t\t\tcompletedAt: now$29,",
+    "\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   373044,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$29,",
+    "\t\t\t\tcompletedAt: now$29,",
+    "\t\t\t\tupdatedAt: now$29,"
+   ]
+  ],
+  [
+   373076,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373084,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   373092,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373100,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   373107,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373115,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373123,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373131,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373152,
+   3,
+   [
+    "\t\t\t\t\tcreatedAt: now$29,",
+    "\t\t\t\t\tupdatedAt: now$29,",
+    "\t\t\t\t\tconsumedAt: now$29"
+   ]
+  ],
+  [
+   373161,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373169,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373178,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373186,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373191,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$29"
+   ]
+  ],
+  [
+   373199,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373207,
+   2,
+   [
+    "\t\t\t\t\tupdatedAt: now$29,",
+    "\t\t\t\t\tconsumedAt: now$29"
+   ]
+  ],
+  [
+   373217,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373220,
+   1,
+   [
+    "\t\t\tyield* completeSourcePlan(now$29);"
+   ]
+  ],
+  [
+   373227,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373236,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373245,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373254,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373263,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373272,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373281,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373289,
+   2,
+   [
+    "\t\t\t\t\tupdatedAt: now$29,",
+    "\t\t\t\t\tconsumedAt: now$29"
+   ]
+  ],
+  [
+   373300,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$29,"
+   ]
+  ],
+  [
+   373303,
+   1,
+   [
+    "\t\t\t\t\t\tdetachedAt: now$29,"
+   ]
+  ],
+  [
+   373362,
+   1,
+   [
+    "\t\t\tconst now$71 = command.createdAt ?? (yield* now);"
+   ]
+  ],
+  [
+   373382,
+   1,
+   [
+    "\t\t\t\t\tnow: now$71,"
+   ]
+  ],
+  [
+   373411,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$71,"
+   ]
+  ],
+  [
+   373413,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$71"
+   ]
+  ],
+  [
+   373429,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$71,"
+   ]
+  ],
+  [
+   373445,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$71,"
+   ]
+  ],
+  [
+   373447,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$71,"
+   ]
+  ],
+  [
+   373463,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$71,"
+   ]
+  ],
+  [
+   373473,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$71,"
+   ]
+  ],
+  [
+   373483,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$71,"
+   ]
+  ],
+  [
+   373493,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$71,"
+   ]
+  ],
+  [
+   373540,
+   3,
+   [
+    "\t\t\t\tcreatedAt: now$71,",
+    "\t\t\t\tupdatedAt: now$71,",
+    "\t\t\t\tconsumedAt: now$71"
+   ]
+  ],
+  [
+   373549,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$71,"
+   ]
+  ],
+  [
+   373704,
+   1,
+   [
+    "\t\t\tconst now$25 = yield* now;"
+   ]
+  ],
+  [
+   373719,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$25"
+   ]
+  ],
+  [
+   373739,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$25,"
+   ]
+  ],
+  [
+   373765,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$25,"
+   ]
+  ],
+  [
+   373767,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$25"
+   ]
+  ],
+  [
+   373785,
+   1,
+   [
+    "\t\t\t\t\tstartedAt: now$25,"
+   ]
+  ],
+  [
+   373787,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$25,"
+   ]
+  ],
+  [
+   373839,
+   1,
+   [
+    "\t\t\t\tconst now$70 = yield* now;"
+   ]
+  ],
+  [
+   373846,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$70,"
+   ]
+  ],
+  [
+   373850,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$70"
+   ]
+  ],
+  [
+   373855,
+   1,
+   [
+    "\t\t\tconst now$28 = yield* now;"
+   ]
+  ],
+  [
+   373861,
+   2,
+   [
+    "\t\t\t\tcompletedAt: now$28,",
+    "\t\t\t\tupdatedAt: now$28"
+   ]
+  ],
+  [
+   373870,
+   1,
+   [
+    "\t\t\t\tnow: now$28"
+   ]
+  ],
+  [
+   373879,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$28,"
+   ]
+  ],
+  [
+   373882,
+   1,
+   [
+    "\t\t\tfor (const event of delegatedCompletionPlanEvents(command.parentThreadId, plan, parentProjection.thread.providerInstanceId, now$28)) yield* emitEvent(event);"
+   ]
+  ],
+  [
+   373890,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$28,"
+   ]
+  ],
+  [
+   373894,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$28"
+   ]
+  ],
+  [
+   373904,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$28,"
+   ]
+  ],
+  [
+   373909,
+   2,
+   [
+    "\t\t\t\t\tcompletedAt: now$28,",
+    "\t\t\t\t\tupdatedAt: now$28"
+   ]
+  ],
+  [
+   373933,
+   1,
+   [
+    "\t\t\tconst now$75 = yield* now;"
+   ]
+  ],
+  [
+   373940,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$75,"
+   ]
+  ],
+  [
+   373948,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$75"
+   ]
+  ],
+  [
+   373973,
+   1,
+   [
+    "\t\t\tconst now$56 = yield* now;"
+   ]
+  ],
+  [
+   373978,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$56"
+   ]
+  ],
+  [
+   373986,
+   1,
+   [
+    "\t\t\t\tnow: now$56"
+   ]
+  ],
+  [
+   373995,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$56,"
+   ]
+  ],
+  [
+   374005,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$56,"
+   ]
+  ],
+  [
+   374014,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$56,"
+   ]
+  ],
+  [
+   374063,
+   1,
+   [
+    "\t\t\tconst now$76 = yield* now;"
+   ]
+  ],
+  [
+   374077,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$76,",
+    "\t\t\t\tcompletedAt: now$76,",
+    "\t\t\t\tupdatedAt: now$76,"
+   ]
+  ],
+  [
+   374092,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$76,"
+   ]
+  ],
+  [
+   374127,
+   1,
+   [
+    "\t\t\tconst now$44 = yield* now;"
+   ]
+  ],
+  [
+   374142,
+   3,
+   [
+    "\t\t\t\tstartedAt: existing?.startedAt ?? now$44,",
+    "\t\t\t\tcompletedAt: pending ? null : now$44,",
+    "\t\t\t\tupdatedAt: now$44,"
+   ]
+  ],
+  [
+   374157,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$44,"
+   ]
+  ],
+  [
+   374162,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$44"
+   ]
+  ],
+  [
+   374171,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$44,"
+   ]
+  ],
+  [
+   374221,
+   1,
+   [
+    "\t\t\tconst now$77 = yield* now;"
+   ]
+  ],
+  [
+   374241,
+   3,
+   [
+    "\t\t\t\tstartedAt: existing?.startedAt ?? now$77,",
+    "\t\t\t\tcompletedAt: pending ? null : now$77,",
+    "\t\t\t\tupdatedAt: now$77,"
+   ]
+  ],
+  [
+   374250,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$77,"
+   ]
+  ],
+  [
+   374255,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$77"
+   ]
+  ],
+  [
+   374264,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$77,"
+   ]
+  ],
+  [
+   374388,
+   1,
+   [
+    "\t\t\tconst now$80 = yield* now;"
+   ]
+  ],
+  [
+   374392,
+   1,
+   [
+    "\t\t\t\tresolvedAt: now$80,"
+   ]
+  ],
+  [
+   374406,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374418,
+   2,
+   [
+    "\t\t\t\t\t\tcreatedAt: now$80,",
+    "\t\t\t\t\t\tupdatedAt: now$80"
+   ]
+  ],
+  [
+   374427,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374443,
+   3,
+   [
+    "\t\t\t\t\t\tstartedAt: now$80,",
+    "\t\t\t\t\t\tcompletedAt: now$80,",
+    "\t\t\t\t\t\tupdatedAt: now$80,"
+   ]
+  ],
+  [
+   374465,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374477,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374481,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$80"
+   ]
+  ],
+  [
+   374493,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374503,
+   2,
+   [
+    "\t\t\t\t\tcompletedAt: now$80,",
+    "\t\t\t\t\tupdatedAt: now$80"
+   ]
+  ],
+  [
+   374543,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$80,"
+   ]
+  ],
+  [
+   374548,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$80"
+   ]
+  ],
+  [
+   374576,
+   1,
+   [
+    "\t\t\tconst now$24 = yield* now;"
+   ]
+  ],
+  [
+   374583,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$24,"
+   ]
+  ],
+  [
+   374596,
+   3,
+   [
+    "\t\t\t\t\tstartedAt: now$24,",
+    "\t\t\t\t\tcompletedAt: now$24,",
+    "\t\t\t\t\tupdatedAt: now$24,"
+   ]
+  ],
+  [
+   374672,
+   1,
+   [
+    "\t\t\tconst now$67 = yield* now;"
+   ]
+  ],
+  [
+   374686,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$67,"
+   ]
+  ],
+  [
+   374701,
+   1,
+   [
+    "\t\t\t\t\tnow: now$67"
+   ]
+  ],
+  [
+   374718,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$67,"
+   ]
+  ],
+  [
+   374733,
+   1,
+   [
+    "\t\t\t\t\tnow: now$67"
+   ]
+  ],
+  [
+   374742,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$67,"
+   ]
+  ],
+  [
+   374747,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$67"
+   ]
+  ],
+  [
+   374756,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$67,"
+   ]
+  ],
+  [
+   374760,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$67"
+   ]
+  ],
+  [
+   374769,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$67,"
+   ]
+  ],
+  [
+   374773,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$67"
+   ]
+  ],
+  [
+   374829,
+   1,
+   [
+    "\t\t\tconst now$57 = yield* now;"
+   ]
+  ],
+  [
+   374840,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$57,"
+   ]
+  ],
+  [
+   374868,
+   1,
+   [
+    "\t\t\t\tconst now$74 = yield* now;"
+   ]
+  ],
+  [
+   374875,
+   1,
+   [
+    "\t\t\t\t\tnow: now$74"
+   ]
+  ],
+  [
+   374881,
+   1,
+   [
+    "\t\t\tconst now$40 = yield* now;"
+   ]
+  ],
+  [
+   374889,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$40,"
+   ]
+  ],
+  [
+   374894,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$40"
+   ]
+  ],
+  [
+   374903,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$40,"
+   ]
+  ],
+  [
+   374907,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$40"
+   ]
+  ],
+  [
+   374916,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$40,"
+   ]
+  ],
+  [
+   374920,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$40"
+   ]
+  ],
+  [
+   374925,
+   1,
+   [
+    "\t\t\t\tconst thread = guestShareAfterCancelledSend(projection.thread, guest, now$40);"
+   ]
+  ],
+  [
+   374930,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$40,"
+   ]
+  ],
+  [
+   374976,
+   1,
+   [
+    "\t\t\tconst now$64 = yield* now;"
+   ]
+  ],
+  [
+   374985,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$64,"
+   ]
+  ],
+  [
+   374991,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$64"
+   ]
+  ],
+  [
+   375000,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$64,"
+   ]
+  ],
+  [
+   375006,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$64"
+   ]
+  ],
+  [
+   375050,
+   1,
+   [
+    "\t\t\tconst now$42 = yield* now;"
+   ]
+  ],
+  [
+   375057,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$42,"
+   ]
+  ],
+  [
+   375061,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$42"
+   ]
+  ],
+  [
+   375082,
+   1,
+   [
+    "\t\t\tconst now$27 = yield* now;"
+   ]
+  ],
+  [
+   375093,
+   1,
+   [
+    "\t\t\t\tcreatedAt: now$27"
+   ]
+  ],
+  [
+   375102,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$27,"
+   ]
+  ],
+  [
+   375111,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$27,"
+   ]
+  ],
+  [
+   375123,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$27,"
+   ]
+  ],
+  [
+   375130,
+   2,
+   [
+    "\t\t\t\t\tcompletedAt: now$27,",
+    "\t\t\t\t\tupdatedAt: now$27"
+   ]
+  ],
+  [
+   375140,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$27,"
+   ]
+  ],
+  [
+   375173,
+   1,
+   [
+    "\t\t\tconst now$53 = yield* now;"
+   ]
+  ],
+  [
+   375181,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$53,"
+   ]
+  ],
+  [
+   375185,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$53"
+   ]
+  ],
+  [
+   375194,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$53,"
+   ]
+  ],
+  [
+   375198,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$53"
+   ]
+  ],
+  [
+   375207,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$53,"
+   ]
+  ],
+  [
+   375214,
+   2,
+   [
+    "\t\t\t\t\tcompletedAt: now$53,",
+    "\t\t\t\t\tupdatedAt: now$53"
+   ]
+  ],
+  [
+   375224,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$53,"
+   ]
+  ],
+  [
+   375240,
+   3,
+   [
+    "\t\t\t\t\tstartedAt: now$53,",
+    "\t\t\t\t\tcompletedAt: now$53,",
+    "\t\t\t\t\tupdatedAt: now$53,"
+   ]
+  ],
+  [
+   375256,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$53,"
+   ]
+  ],
+  [
+   375260,
+   1,
+   [
+    "\t\t\t\t\tcompletedAt: now$53"
+   ]
+  ],
+  [
+   375287,
+   1,
+   [
+    "\t\t\tconst now$68 = yield* now;"
+   ]
+  ],
+  [
+   375294,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$68"
+   ]
+  ],
+  [
+   375302,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$68"
+   ]
+  ],
+  [
+   375313,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$68"
+   ]
+  ],
+  [
+   375351,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$68,"
+   ]
+  ],
+  [
+   375774,
+   1,
+   [
+    "\t\t\tconst now$63 = yield* now;"
+   ]
+  ],
+  [
+   375781,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$63,"
+   ]
+  ],
+  [
+   375784,
+   2,
+   [
+    "\t\t\t\t\tunresponsiveAt: now$63,",
+    "\t\t\t\t\tupdatedAt: now$63"
+   ]
+  ],
+  [
+   375826,
+   1,
+   [
+    "\t\t\t\tconst now$79 = yield* now;"
+   ]
+  ],
+  [
+   375837,
+   1,
+   [
+    "\t\t\t\t\tnow: now$79,"
+   ]
+  ],
+  [
+   375862,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$79,"
+   ]
+  ],
+  [
+   375878,
+   1,
+   [
+    "\t\t\tconst now$69 = yield* now;"
+   ]
+  ],
+  [
+   375893,
+   1,
+   [
+    "\t\t\t\t\tnow: now$69"
+   ]
+  ],
+  [
+   375903,
+   1,
+   [
+    "\t\t\t\tnow: now$69"
+   ]
+  ],
+  [
+   375928,
+   1,
+   [
+    "\t\t\t\tconst now$36 = yield* now;"
+   ]
+  ],
+  [
+   375932,
+   1,
+   [
+    "\t\t\t\t\ttask: active ? cancelledAppOwnedTask(subagent, now$36) : subagent,"
+   ]
+  ],
+  [
+   375935,
+   1,
+   [
+    "\t\t\t\t\tnow: now$36"
+   ]
+  ],
+  [
+   375957,
+   1,
+   [
+    "\t\t\tconst now$37 = yield* now;"
+   ]
+  ],
+  [
+   375964,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$37,"
+   ]
+  ],
+  [
+   375967,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$37"
+   ]
+  ],
+  [
+   376027,
+   1,
+   [
+    "\t\t\tconst now$72 = yield* now;"
+   ]
+  ],
+  [
+   376035,
+   1,
+   [
+    "\t\t\t\tnow: now$72"
+   ]
+  ],
+  [
+   376043,
+   1,
+   [
+    "\t\t\t\t\tnow: now$72,"
+   ]
+  ],
+  [
+   376063,
+   3,
+   [
+    "\t\t\t\tstartedAt: now$72,",
+    "\t\t\t\tcompletedAt: now$72,",
+    "\t\t\t\tupdatedAt: now$72,"
+   ]
+  ],
+  [
+   376127,
+   3,
+   [
+    "\t\t\t\t\tstartedAt: now$72,",
+    "\t\t\t\t\tcompletedAt: now$72,",
+    "\t\t\t\t\tupdatedAt: now$72,"
+   ]
+  ],
+  [
+   376139,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376148,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376158,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376164,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$72,",
+    "\t\t\t\t\t\tupdatedAt: now$72"
+   ]
+  ],
+  [
+   376174,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376178,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$72"
+   ]
+  ],
+  [
+   376187,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376191,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$72"
+   ]
+  ],
+  [
+   376200,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376204,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$72"
+   ]
+  ],
+  [
+   376247,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376257,
+   1,
+   [
+    "\t\t\t\t\tnow: now$72"
+   ]
+  ],
+  [
+   376265,
+   1,
+   [
+    "\t\t\t\t\tnow: now$72"
+   ]
+  ],
+  [
+   376288,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$72,"
+   ]
+  ],
+  [
+   376384,
+   1,
+   [
+    "\t\t\t\tconst now$30 = yield* now;"
+   ]
+  ],
+  [
+   376389,
+   1,
+   [
+    "\t\t\t\t\ttask: cancelledAppOwnedTask(task, now$30),"
+   ]
+  ],
+  [
+   376392,
+   1,
+   [
+    "\t\t\t\t\tnow: now$30"
+   ]
+  ],
+  [
+   376504,
+   1,
+   [
+    "\t\t\tconst now$62 = yield* now;"
+   ]
+  ],
+  [
+   376514,
+   1,
+   [
+    "\t\t\t\tnow: now$62"
+   ]
+  ],
+  [
+   376521,
+   1,
+   [
+    "\t\t\t\tnow: now$62"
+   ]
+  ],
+  [
+   376588,
+   1,
+   [
+    "\t\t\t\tif (!(yield* isCheckpointRestoreIsolated(projection.thread, {",
+    "\t\t\t\t\t...targetScope,",
+    "\t\t\t\t\trestorePoint: targetCheckpoint.capturedAt",
+    "\t\t\t\t}, {"
+   ]
+  ],
+  [
+   376618,
+   1,
+   [
+    "\t\t\tconst now$39 = yield* now;"
+   ]
+  ],
+  [
+   376623,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$39,"
+   ]
+  ],
+  [
+   376628,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$39"
+   ]
+  ],
+  [
+   376635,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$39,"
+   ]
+  ],
+  [
+   376639,
+   1,
+   [
+    "\t\t\t\t\trequestedAt: now$39"
+   ]
+  ],
+  [
+   376663,
+   1,
+   [
+    "\t\t\tconst now$51 = yield* now;"
+   ]
+  ],
+  [
+   376668,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$51,"
+   ]
+  ],
+  [
+   376675,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$51"
+   ]
+  ],
+  [
+   376840,
+   1,
+   [
+    "\t\t\t\tconst now$49 = yield* now;"
+   ]
+  ],
+  [
+   376846,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$49"
+   ]
+  ],
+  [
+   376858,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$49"
+   ]
+  ],
+  [
+   376877,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$49"
+   ]
+  ],
+  [
+   376912,
+   1,
+   [
+    "\t\t\tconst now$46 = yield* now;"
+   ]
+  ],
+  [
+   376925,
+   2,
+   [
+    "\t\t\t\tcompletedAt: now$46,",
+    "\t\t\t\tupdatedAt: now$46"
+   ]
+  ],
+  [
+   376933,
+   1,
+   [
+    "\t\t\t\tnow: now$46"
+   ]
+  ],
+  [
+   376956,
+   3,
+   [
+    "\t\t\t\tcreatedAt: now$46,",
+    "\t\t\t\tupdatedAt: now$46,",
+    "\t\t\t\tconsumedAt: now$46"
+   ]
+  ],
+  [
+   376967,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$46,"
+   ]
+  ],
+  [
+   376970,
+   1,
+   [
+    "\t\t\t\t...delegatedCompletionPlanEvents(parentThreadId, completionPlan, parentProjection.thread.providerInstanceId, now$46),"
+   ]
+  ],
+  [
+   376977,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$46,"
+   ]
+  ],
+  [
+   376982,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$46"
+   ]
+  ],
+  [
+   376991,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$46,"
+   ]
+  ],
+  [
+   376996,
+   2,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$46,",
+    "\t\t\t\t\t\tupdatedAt: now$46"
+   ]
+  ],
+  [
+   377005,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$46,"
+   ]
+  ],
+  [
+   377078,
+   1,
+   [
+    "\t\t\tconst now$52 = yield* now;"
+   ]
+  ],
+  [
+   377118,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$52,"
+   ]
+  ],
+  [
+   377122,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$52"
+   ]
+  ],
+  [
+   377132,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$52,"
+   ]
+  ],
+  [
+   377143,
+   1,
+   [
+    "\t\t\tconst now$32 = yield* now;"
+   ]
+  ],
+  [
+   377149,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$32,"
+   ]
+  ],
+  [
+   377176,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$32,"
+   ]
+  ],
+  [
+   377183,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$32"
+   ]
+  ],
+  [
+   377192,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$32,"
+   ]
+  ],
+  [
+   377244,
+   1,
+   [
+    "\t\t\t\t\tconst now$65 = yield* now;"
+   ]
+  ],
+  [
+   377261,
+   1,
+   [
+    "\t\t\t\t\t\t\tnow: now$65,"
+   ]
+  ],
+  [
+   377436,
+   1,
+   [
+    "\t\t\t\t\tconst now$50 = yield* now;"
+   ]
+  ],
+  [
+   377443,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$50,"
+   ]
+  ],
+  [
+   377452,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$50,"
+   ]
+  ],
+  [
+   380316,
+   2,
+   [
+    "\t\t\tconst now$23 = yield* now;",
+    "\t\t\tif (!(yield* sharingEnabled) || !share || share.id !== claims.value.shareId || thread.archivedAt !== null || thread.deletedAt !== null || toEpochMillis(now$23) >= Date.parse(share.expiresAt) || kind === \"session\" && share.guestName === null || (yield* connectHostname) !== share.host) return yield* inactive;"
+   ]
+  ],
+  [
+   380328,
+   2,
+   [
+    "\t\t\tconst now$22 = yield* now;",
+    "\t\t\tconst expiresAt = formatIso(add$2(now$22, { milliseconds: GUEST_SHARE_TTL_MS }));"
+   ]
+  ],
+  [
+   380733,
+   2,
+   [
+    "\t\t\tconst now$21 = yield* now;",
+    "\t\t\tconst nowMs = toEpochMillis(now$21);"
+   ]
+  ],
+  [
+   380739,
+   1,
+   [
+    "\t\t\t\tnow: now$21,"
+   ]
+  ],
+  [
+   380761,
+   1,
+   [
+    "\t\t\tconst wakeAt = yield* projections.getLimitRecoveryWakeAt(now$21);"
+   ]
+  ],
+  [
+   387661,
+   1,
+   [
+    "\t\t\tif (input.restoreFiles !== false && !(yield* isCheckpointRestoreIsolated(context.thread, {",
+    "\t\t\t\t...scope,",
+    "\t\t\t\trestorePoint: checkpoint.capturedAt",
+    "\t\t\t}, {"
+   ]
+  ],
+  [
+   387703,
+   1,
+   [
+    "\t\t\t\tconst now$20 = yield* now;"
+   ]
+  ],
+  [
+   387714,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$20,"
+   ]
+  ],
+  [
+   387718,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$20"
+   ]
+  ],
+  [
+   387727,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$20,"
+   ]
+  ],
+  [
+   387741,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$20,"
+   ]
+  ],
+  [
+   387745,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$20"
+   ]
+  ],
+  [
+   387754,
+   1,
+   [
+    "\t\t\t\t\t\toccurredAt: now$20,"
+   ]
+  ],
+  [
+   387758,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$20"
+   ]
+  ],
+  [
+   388851,
+   1,
+   [
+    "\t\t\t\t\tconst now$19 = yield* now;"
+   ]
+  ],
+  [
+   388862,
+   2,
+   [
+    "\t\t\t\t\t\tnow: now$19,",
+    "\t\t\t\t\t\tstartedAt: now$19,"
+   ]
+  ],
+  [
+   388880,
+   1,
+   [
+    "\t\t\t\t\t\t\tupdatedAt: now$19"
+   ]
+  ],
+  [
+   389392,
+   1,
+   [
+    "\t\t\tconst now$18 = yield* now;"
+   ]
+  ],
+  [
+   389411,
+   1,
+   [
+    "\t\t\t\tupdatedAt: now$18"
+   ]
+  ],
+  [
+   389416,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$18"
+   ]
+  ],
+  [
+   389422,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$18"
+   ]
+  ],
+  [
+   389427,
+   1,
+   [
+    "\t\t\t\tstartedAt: now$18"
+   ]
+  ],
+  [
+   389439,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   389448,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   389458,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   389469,
+   2,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$18,",
+    "\t\t\t\t\t\tconsumedAt: now$18"
+   ]
+  ],
+  [
+   389480,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   389490,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   389500,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$18,"
+   ]
+  ],
+  [
+   390431,
+   1,
+   [
+    "\t\t\t\tconst now$17 = toEpochMillis(yield* now);"
+   ]
+  ],
+  [
+   390435,
+   1,
+   [
+    "\t\t\t\t\t\tconst untilAvailable = toEpochMillis(availableAt) - now$17;"
+   ]
+  ],
+  [
+   390716,
+   1,
+   [
+    "\t\t\tconst now$16 = yield* now;"
+   ]
+  ],
+  [
+   390735,
+   1,
+   [
+    "\t\t\tconst commandId = CommandId.make(`command:runtime-reconcile:${trigger}:${projection.thread.id}:${formatIso(now$16)}`);"
+   ]
+  ],
+  [
+   390788,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390795,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   390816,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390831,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390838,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   390858,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390863,
+   1,
+   [
+    "\t\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   390866,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   390875,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390886,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390894,
+   1,
+   [
+    "\t\t\t\t\tresolvedAt: now$16"
+   ]
+  ],
+  [
+   390904,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390909,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   390919,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390923,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   390933,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390937,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   390947,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390951,
+   1,
+   [
+    "\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   390961,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390965,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   390978,
+   2,
+   [
+    "\t\t\t\t\t\toccurredAt: now$16,",
+    "\t\t\t\t\t\tpayload: cancelledItem(item, now$16)"
+   ]
+  ],
+  [
+   390994,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   390998,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   391017,
+   2,
+   [
+    "\t\t\t\t\toccurredAt: now$16,",
+    "\t\t\t\t\tpayload: cancelledItem(item, now$16)"
+   ]
+  ],
+  [
+   391031,
+   1,
+   [
+    "\t\t\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   391035,
+   1,
+   [
+    "\t\t\t\t\t\t\t\tcompletedAt: now$16"
+   ]
+  ],
+  [
+   391045,
+   1,
+   [
+    "\t\t\t\tnow: now$16,"
+   ]
+  ],
+  [
+   391054,
+   1,
+   [
+    "\t\t\t\tnow: now$16,"
+   ]
+  ],
+  [
+   391073,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   391078,
+   1,
+   [
+    "\t\t\t\t\t\tupdatedAt: now$16"
+   ]
+  ],
+  [
+   391088,
+   1,
+   [
+    "\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   391093,
+   1,
+   [
+    "\t\t\t\t\tupdatedAt: now$16,"
+   ]
+  ],
+  [
+   391106,
+   1,
+   [
+    "\t\t\t\t\toccurredAt: now$16,"
+   ]
+  ],
+  [
+   391116,
+   1,
+   [
+    "\t\t\t}, now$16) : void 0;"
+   ]
+  ],
+  [
+   391148,
+   1,
+   [
+    "\t\t\t\tacceptedAt: now$16,"
+   ]
+  ],
+  [
+   393815,
+   1,
+   [
+    "\t\t\tconst now$15 = yield* currentTimeMillis;"
+   ]
+  ],
+  [
+   393819,
+   1,
+   [
+    "\t\t\tconst deletedWorktrees = yield* cleanWorktrees(serverSettings, now$15, entries).pipe(catch_$2((error) => gen$1(function* () {"
+   ]
+  ],
+  [
+   393856,
+   1,
+   [
+    "\t\t\t\tyield* cleanFiles(category.root, category.days, now$15, category.kind === \"logs\", removed).pipe(map$11(({ files, bytes }) => entries.push({"
+   ]
+  ],
+  [
+   393897,
+   1,
+   [
+    "\t\t\t\tstartedAt: formatIso(makeUnsafe$11(now$15)),"
+   ]
+  ],
+  [
+   394178,
+   3,
+   [
+    "\t\t\tconst now$14 = yield* now;",
+    "\t\t\tconst nowMs = toEpochMillis(now$14);",
+    "\t\t\tconst nowIso = formatIso(now$14);"
+   ]
+  ],
+  [
+   395002,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeHttpCompression.js"
+   ]
+  ],
+  [
+   395074,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeHttpPlatform.js"
+   ]
+  ],
+  [
+   395172,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeMultipartParser.js"
+   ]
+  ],
+  [
+   395273,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeMultipart.js"
+   ]
+  ],
+  [
+   398955,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node-share_fdcd72b3c59e84fd6fc51f468d945e6e/node_modules/@effect/platform-node-shared/dist/NodeWS.js"
+   ]
+  ],
+  [
+   398959,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeWS.js"
+   ]
+  ],
+  [
+   401157,
+   1,
+   [
+    "\t\t\tlet result = yield* serverAuth.getSessionState(request);"
+   ]
+  ],
+  [
+   401159,
+   2,
+   [
+    "\t\t\tif ((credential?.source === \"cookie\" || credential?.source === \"legacy-cookie\") && result.authenticated && result.sessionMethod === \"browser-session-cookie\" && result.expiresAt) {",
+    "\t\t\t\tlet token = credential.token;",
+    "\t\t\t\tlet cookieExpiresAt = result.expiresAt;",
+    "\t\t\t\tconst now$13 = yield* now;",
+    "\t\t\t\tif (isLessThan$1(result.expiresAt, add$2(now$13, { days: 365 }))) {",
+    "\t\t\t\t\tconst current = yield* sessions.verify(token).pipe(catch_$2(() => failEnvironmentInternal(\"browser_session_issuance_failed\")));",
+    "\t\t\t\t\tconst remembered = yield* sessions.issue({",
+    "\t\t\t\t\t\tmethod: \"browser-session-cookie\",",
+    "\t\t\t\t\t\tsubject: current.subject,",
+    "\t\t\t\t\t\tscopes: current.scopes,",
+    "\t\t\t\t\t\tclient: current.client,",
+    "\t\t\t\t\t\t...current.runtimeModeCeiling ? { runtimeModeCeiling: current.runtimeModeCeiling } : {},",
+    "\t\t\t\t\t\t...current.peerLink ? { peerLink: true } : {},",
+    "\t\t\t\t\t\treplaceSessionId: current.sessionId",
+    "\t\t\t\t\t}).pipe(catch_$2(() => failEnvironmentInternal(\"browser_session_issuance_failed\")));",
+    "\t\t\t\t\ttoken = remembered.token;",
+    "\t\t\t\t\tcookieExpiresAt = toUtc(remembered.expiresAt);",
+    "\t\t\t\t\tresult = {",
+    "\t\t\t\t\t\t...result,",
+    "\t\t\t\t\t\texpiresAt: cookieExpiresAt",
+    "\t\t\t\t\t};",
+    "\t\t\t\t}",
+    "\t\t\t\tyield* appendSessionCookie(sessions.cookieName, token, cookieExpiresAt);"
+   ]
+  ],
+  [
+   406841,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeSocketServer.js"
+   ]
+  ],
+  [
+   417384,
+   0,
+   [
+    "\t\t[WS_METHODS.providerSetSkillEnabled]: \"provider\","
+   ]
+  ],
+  [
+   423837,
+   0,
+   [
+    "\t\t\t[WS_METHODS.providerSetSkillEnabled]: (input) => providerRegistry.setSkillEnabled(input),"
+   ]
+  ],
+  [
+   445609,
+   1,
+   [
+    "\t\t\tconst invocation = (yield* registry.resolve(token)) ?? (yield* registry.resolveForTermination(token, request.method)) ?? (isSome(clients) && token.length > 0 ? yield* clients.value.authenticate(request) : void 0);"
+   ]
+  ],
+  [
+   445611,
+   1,
+   [
+    "\t\t\t\tyield* logWarning$1(\"rejected MCP request with an unusable credential\", { method: request.method, reason: authorization === void 0 ? \"missing_authorization_header\" : authorization.split(\" \", 1)[0]?.toLowerCase() !== \"bearer\" ? \"unsupported_scheme\" : token.length === 0 ? \"missing_bearer_token\" : \"unknown_or_expired_token\" });"
+   ]
+  ],
+  [
+   446353,
+   1,
+   [
+    "// ../../node_modules/.pnpm/@effect+platform-node@4.1.2_c157f31072851ca68ef4bd3d49040554/node_modules/@effect/platform-node/dist/NodeHttpServerRequest.js"
+   ]
+  ]
+ ]
+}

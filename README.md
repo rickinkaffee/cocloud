@@ -1,5 +1,7 @@
 # cocloud
 
+For the maintained web release source and reproducible backend delta, see the [deployment snapshot](deployment/README.md). Use your own service credentials. APK builds are retired.
+
 最新通用功能更新与部署差异见 [同步说明](docs/SYNC-NOTES.zh-CN.md)。
 
 [中文安装与使用指南](README.zh-CN.md)
